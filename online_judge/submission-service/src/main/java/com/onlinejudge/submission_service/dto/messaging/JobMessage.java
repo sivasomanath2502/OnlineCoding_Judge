@@ -1,7 +1,6 @@
 package com.onlinejudge.submission_service.dto.messaging;
 
 import lombok.*;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -9,6 +8,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class JobMessage {
-    private UUID submissionId;
-    private UUID problemId;
+
+    private String submissionId;  // String not UUID
+    private String problemId;     // String not UUID
 }

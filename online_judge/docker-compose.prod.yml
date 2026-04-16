@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: online-judge-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: online_judge
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: online-judge-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  submission-service:
+    image: ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
+    container_name: submission-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/online_judge
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_RABBITMQ_HOST: rabbitmq
+    depends_on:
+      - mysql
+      - rabbitmq
+
+  worker-service:
+    image: ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
+    container_name: worker-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/online_judge
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_RABBITMQ_HOST: rabbitmq
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - mysql
+      - rabbitmq
+
+  result-service:
+    image: ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
+    container_name: result-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/online_judge
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    depends_on:
+      - mysql
+
+  api-gateway:
+    image: ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
+    container_name: api-gateway
+    ports:
+      - "8090:8090"
+    environment:
+      SPRING_CLOUD_GATEWAY_ROUTES_0_URI: http://submission-service:8081
+      SPRING_CLOUD_GATEWAY_ROUTES_1_URI: http://result-service:8083
+    depends_on:
+      - submission-service
+      - result-service
+
+volumes:
+  mysql_data:

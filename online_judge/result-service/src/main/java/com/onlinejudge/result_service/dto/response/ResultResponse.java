@@ -13,7 +13,7 @@ import java.util.UUID;
 @Builder
 public class ResultResponse {
 
-    private UUID submissionId;
+    private String submissionId;
     private SubmissionStatus status;
     private Verdict verdict;
     private Integer executionMs;

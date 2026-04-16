@@ -10,17 +10,12 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "problems")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Problem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "BINARY(16)", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "id", updatable = false, nullable = false, length = 36)
+    private String id;  // ← Change UUID to String
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -33,7 +28,7 @@ public class Problem {
     private Difficulty difficulty;
 
     @Column(name = "time_limit_ms", nullable = false)
-    private Integer timeLimitMs = 2000;
+    private Integer timeLimitMs;
 
     @OneToMany(mappedBy = "problem", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("orderIndex ASC")

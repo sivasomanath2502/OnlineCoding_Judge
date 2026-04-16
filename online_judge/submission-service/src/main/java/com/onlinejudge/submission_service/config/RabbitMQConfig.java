@@ -1,14 +1,17 @@
 package com.onlinejudge.submission_service.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@Slf4j
 @Configuration
 public class RabbitMQConfig {
 
@@ -25,7 +28,6 @@ public class RabbitMQConfig {
     private String routingKey;
 
     // ─── Dead Letter Queue ───────────────────────────────────────────
-    // Simple durable queue — no special args needed on DLQ itself
     @Bean
     public Queue deadLetterQueue() {
         return QueueBuilder
@@ -34,13 +36,11 @@ public class RabbitMQConfig {
     }
 
     // ─── Main Job Queue ──────────────────────────────────────────────
-    // When message is rejected 3 times → goes to DLQ directly
-    // Using "" (default exchange) so we just need the DLQ name as routing key
     @Bean
     public Queue jobQueue() {
         return QueueBuilder
                 .durable(jobQueueName)
-                .withArgument("x-dead-letter-exchange", "")  // default exchange
+                .withArgument("x-dead-letter-exchange", "")
                 .withArgument("x-dead-letter-routing-key", deadLetterQueueName)
                 .build();
     }
@@ -72,5 +72,20 @@ public class RabbitMQConfig {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(jsonMessageConverter());
         return template;
+    }
+
+    // Force connection pool to initialize at startup
+    @Bean
+    public ApplicationRunner rabbitConnectionInitializer(
+            ConnectionFactory connectionFactory) {
+        return args -> {
+            try {
+                connectionFactory.createConnection().close();
+                log.info("RabbitMQ connection pre-initialized successfully");
+            } catch (Exception e) {
+                log.warn("Could not pre-initialize RabbitMQ connection: {}",
+                        e.getMessage());
+            }
+        };
     }
 }

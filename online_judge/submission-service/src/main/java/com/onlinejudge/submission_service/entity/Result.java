@@ -17,9 +17,8 @@ import java.util.UUID;
 public class Result {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "BINARY(16)", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "id", updatable = false, nullable = false, length = 36)
+    private String id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "submission_id", nullable = false)
@@ -46,6 +45,9 @@ public class Result {
 
     @PrePersist
     protected void onCreate() {
+        if (id == null) {
+            id = java.util.UUID.randomUUID().toString();
+        }
         createdAt = LocalDateTime.now();
     }
 }

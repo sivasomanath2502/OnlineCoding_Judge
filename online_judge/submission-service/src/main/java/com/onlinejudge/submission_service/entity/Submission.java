@@ -18,9 +18,8 @@ import java.util.UUID;
 public class Submission {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "BINARY(16)", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "id", updatable = false, nullable = false, length = 36)
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "problem_id", nullable = false)
@@ -45,7 +44,12 @@ public class Submission {
 
     @PrePersist
     protected void onCreate() {
-        submittedAt = LocalDateTime.now();
+        if (id == null) {
+            id = java.util.UUID.randomUUID().toString();
+        }
+        if (submittedAt == null) {
+            submittedAt = LocalDateTime.now();
+        }
         if (status == null) {
             status = SubmissionStatus.PENDING;
         }

@@ -1,0 +1,104 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKERHUB_USERNAME    = 'your-dockerhub-username'
+        IMAGE_TAG             = "${BUILD_NUMBER}"
+    }
+
+    stages {
+
+        // ─── Stage 1: Checkout ────────────────────────────────────────
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm
+            }
+        }
+
+        // ─── Stage 2: Build ───────────────────────────────────────────
+        stage('Build') {
+            steps {
+                echo 'Building all services...'
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        // ─── Stage 3: Unit Tests ──────────────────────────────────────
+        stage('Unit Tests') {
+            steps {
+                echo 'Running unit tests...'
+                sh 'mvn test'
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        // ─── Stage 4: Docker Build ────────────────────────────────────
+        stage('Docker Build') {
+            steps {
+                echo 'Building Docker images...'
+                sh """
+                    docker build -t ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG} \
+                        ./submission-service
+
+                    docker build -t ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG} \
+                        ./worker-service
+
+                    docker build -t ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG} \
+                        ./result-service
+
+                    docker build -t ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG} \
+                        ./api-gateway
+                """
+            }
+        }
+
+        // ─── Stage 5: Docker Push ─────────────────────────────────────
+        stage('Docker Push') {
+            steps {
+                echo 'Pushing images to DockerHub...'
+                sh """
+                    echo ${DOCKERHUB_CREDENTIALS_PSW} | \
+                        docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
+
+                    docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
+                    docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
+                    docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
+                    docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
+
+                    docker logout
+                """
+            }
+        }
+
+        // ─── Stage 6: Deploy ──────────────────────────────────────────
+        stage('Deploy') {
+            steps {
+                echo 'Deploying services...'
+                sh """
+                    docker-compose -f docker-compose.prod.yml down || true
+                    IMAGE_TAG=${IMAGE_TAG} \
+                    DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} \
+                    docker-compose -f docker-compose.prod.yml up -d
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed!'
+        }
+        always {
+            echo 'Pipeline finished.'
+        }
+    }
+}

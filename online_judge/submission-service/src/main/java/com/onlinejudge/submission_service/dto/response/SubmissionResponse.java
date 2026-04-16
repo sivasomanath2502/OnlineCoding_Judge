@@ -13,7 +13,7 @@ import java.util.UUID;
 @Builder
 public class SubmissionResponse {
 
-    private UUID submissionId;
+    private String submissionId;  // String not UUID
     private SubmissionStatus status;
     private LocalDateTime submittedAt;
     private String message;
