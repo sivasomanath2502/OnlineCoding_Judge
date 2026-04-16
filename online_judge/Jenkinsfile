@@ -28,7 +28,6 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo 'Building all services...'
                 dir('online_judge') {
                     sh 'mvn -B clean package -DskipTests'
                 }
@@ -36,10 +35,10 @@ pipeline {
         }
 
         stage('Unit Tests') {
-             steps {
-                 echo 'Skipping tests (not implemented yet)'
-             }
-         }
+            steps {
+                echo 'Skipping tests (not implemented yet)'
+            }
+        }
 
         stage('Docker Build') {
             steps {
@@ -55,41 +54,48 @@ pipeline {
         }
 
         stage('Docker Push') {
-                    steps {
-                        echo 'Logging into DockerHub...'
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credential',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
 
-                        withCredentials([usernamePassword(
-                            credentialsId: 'docker-hub-credential',
-                            usernameVariable: 'DOCKER_USER',
-                            passwordVariable: 'DOCKER_PASS'
-                        )]) {
-                            sh '''
-                                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
 
-                                docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
-
-                                docker logout
-                            '''
-                        }
-                    }
+                        docker logout
+                    """
                 }
+            }
+        }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying services...'
                 dir('online_judge') {
-                    sh '''
+                    sh """
                         docker-compose -f docker-compose.prod.yml down || true
 
                         IMAGE_TAG=${IMAGE_TAG} DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} \
                         docker-compose -f docker-compose.prod.yml up -d
-                    '''
+                    """
                 }
             }
         }
+
+        stage('Health Check') {
+            steps {
+                sh '''
+                    sleep 10
+                    curl -f http://localhost:8090/actuator/health || exit 1
+                '''
+            }
+        }
+    }
 
     post {
         success {
