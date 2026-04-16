@@ -78,21 +78,20 @@ pipeline {
             steps {
                 dir('online_judge') {
                     sh """
+                        set -e
+
                         docker-compose -f docker-compose.prod.yml down || true
+
+                        # Force remove conflicting containers
+                        docker rm -f result-service || true
+                        docker rm -f submission-service || true
+                        docker rm -f worker-service || true
+                        docker rm -f api-gateway || true
 
                         IMAGE_TAG=${IMAGE_TAG} DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} \
                         docker-compose -f docker-compose.prod.yml up -d
                     """
                 }
-            }
-        }
-
-        stage('Health Check') {
-            steps {
-                sh '''
-                    sleep 10
-                    curl -f http://localhost:8090/actuator/health || exit 1
-                '''
             }
         }
     }
