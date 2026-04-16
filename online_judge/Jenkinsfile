@@ -43,13 +43,14 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                echo 'Building Docker images...'
-                sh """
-                    docker build -t ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG} ./submission-service
-                    docker build -t ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG} ./worker-service
-                    docker build -t ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG} ./result-service
-                    docker build -t ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG} ./api-gateway
-                """
+                dir('online_judge') {
+                    sh """
+                        docker build -t ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG} ./submission-service
+                        docker build -t ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG} ./worker-service
+                        docker build -t ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG} ./result-service
+                        docker build -t ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG} ./api-gateway
+                    """
+                }
             }
         }
 
