@@ -1,6 +1,9 @@
 pipeline {
     agent any
-
+    tools {
+        maven 'Maven 3'
+        jdk 'JDK 17'
+    }
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         DOCKERHUB_USERNAME    = 'your-dockerhub-username'
