@@ -55,27 +55,27 @@ pipeline {
         }
 
         stage('Docker Push') {
-            steps {
-                echo 'Logging into DockerHub...'
+                    steps {
+                        echo 'Logging into DockerHub...'
 
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-credentials',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        withCredentials([usernamePassword(
+                            credentialsId: 'dockerhub-credentials',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )]) {
+                            sh '''
+                                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
 
-                        docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
-                        docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
-                        docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
-                        docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
+                                docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
+                                docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
+                                docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
+                                docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
 
-                        docker logout
-                    '''
+                                docker logout
+                            '''
+                        }
+                    }
                 }
-            }
-        }
 
         stage('Deploy') {
             steps {
