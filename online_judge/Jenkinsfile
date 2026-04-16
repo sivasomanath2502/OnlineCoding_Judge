@@ -29,7 +29,9 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building all services...'
-                sh 'mvn -B clean package -DskipTests'
+                dir('online_judge') {
+                    sh 'mvn -B clean package -DskipTests'
+                }
             }
         }
 
