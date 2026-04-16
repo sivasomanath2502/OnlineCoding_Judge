@@ -44,10 +44,21 @@ pipeline {
             steps {
                 dir('online_judge') {
                     sh """
-                        docker build -t ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG} ./submission-service
-                        docker build -t ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG} ./worker-service
-                        docker build -t ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG} ./result-service
-                        docker build -t ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG} ./api-gateway
+                        docker build -t ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG} \
+                                     -t ${DOCKERHUB_USERNAME}/submission-service:latest \
+                                     ./submission-service
+
+                        docker build -t ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG} \
+                                     -t ${DOCKERHUB_USERNAME}/worker-service:latest \
+                                     ./worker-service
+
+                        docker build -t ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG} \
+                                     -t ${DOCKERHUB_USERNAME}/result-service:latest \
+                                     ./result-service
+
+                        docker build -t ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG} \
+                                     -t ${DOCKERHUB_USERNAME}/api-gateway:latest \
+                                     ./api-gateway
                     """
                 }
             }
@@ -64,9 +75,16 @@ pipeline {
                         echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
 
                         docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/submission-service:latest
+
                         docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/worker-service:latest
+
                         docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/result-service:latest
+
                         docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/api-gateway:latest
 
                         docker logout
                     """
