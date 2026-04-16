@@ -80,16 +80,16 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying services...'
-                sh '''
-                    docker compose -f docker-compose.prod.yml down || true
+                dir('online_judge') {
+                    sh '''
+                        docker-compose -f docker-compose.prod.yml down || true
 
-                    IMAGE_TAG=${IMAGE_TAG} \
-                    DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} \
-                    docker compose -f docker-compose.prod.yml up -d
-                '''
+                        IMAGE_TAG=${IMAGE_TAG} DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} \
+                        docker-compose -f docker-compose.prod.yml up -d
+                    '''
+                }
             }
         }
-    }
 
     post {
         success {
