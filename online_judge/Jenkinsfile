@@ -59,6 +59,10 @@ pipeline {
                         docker build -t ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG} \
                                      -t ${DOCKERHUB_USERNAME}/api-gateway:latest \
                                      ./api-gateway
+
+                        docker build -t ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG} \
+                                     -t ${DOCKERHUB_USERNAME}/admin-service:latest \
+                                     ./admin-service
                     """
                 }
             }
@@ -76,15 +80,14 @@ pipeline {
 
                         docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
                         docker push ${DOCKERHUB_USERNAME}/submission-service:latest
-
                         docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
                         docker push ${DOCKERHUB_USERNAME}/worker-service:latest
-
                         docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
                         docker push ${DOCKERHUB_USERNAME}/result-service:latest
-
                         docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
                         docker push ${DOCKERHUB_USERNAME}/api-gateway:latest
+                        docker push ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USERNAME}/admin-service:latest
 
                         docker logout
                     """
@@ -97,15 +100,9 @@ pipeline {
                 dir('online_judge') {
                     sh """
                         set -e
-
                         docker-compose -f docker-compose.prod.yml down || true
-
-                        # Force remove conflicting containers
-                        docker rm -f result-service || true
-                        docker rm -f submission-service || true
-                        docker rm -f worker-service || true
-                        docker rm -f api-gateway || true
-
+                        docker rm -f result-service submission-service \
+                                     worker-service api-gateway admin-service || true
                         IMAGE_TAG=${IMAGE_TAG} DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} \
                         docker-compose -f docker-compose.prod.yml up -d
                     """

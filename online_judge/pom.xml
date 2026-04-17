@@ -18,6 +18,7 @@
         <module>submission-service</module>
         <module>worker-service</module>
         <module>result-service</module>
+        <module>admin-service</module>
     </modules>
 
     <properties>

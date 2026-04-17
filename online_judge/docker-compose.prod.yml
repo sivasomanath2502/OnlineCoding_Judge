@@ -73,6 +73,16 @@ services:
     depends_on:
       - submission-service
       - result-service
-
+  admin-service:
+    image: ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG}
+    container_name: admin-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/online_judge
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    depends_on:
+      - mysql
 volumes:
   mysql_data:
