@@ -1,0 +1,119 @@
+---
+- name: Install all dependencies on server
+  hosts: app_servers
+  become: yes
+
+  vars:
+    java_version: "17"
+    docker_compose_version: "2.24.0"
+
+  tasks:
+
+    # ─── Update system ────────────────────────────────────────────────
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    # ─── Install Java 17 ─────────────────────────────────────────────
+    - name: Install Java 17
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Verify Java installation
+      command: java -version
+      register: java_version_output
+      changed_when: false
+
+    - name: Show Java version
+      debug:
+        msg: "{{ java_version_output.stderr }}"
+
+    # ─── Install Docker ───────────────────────────────────────────────
+    - name: Install Docker dependencies
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cache: yes
+
+    - name: Start and enable Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    # ─── Install Docker Compose ───────────────────────────────────────
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Verify Docker Compose
+      command: docker-compose --version
+      register: compose_output
+      changed_when: false
+
+    - name: Show Docker Compose version
+      debug:
+        msg: "{{ compose_output.stdout }}"
+
+    # ─── Install Maven ────────────────────────────────────────────────
+    - name: Install Maven
+      apt:
+        name: maven
+        state: present
+
+    # ─── Pull required Docker images ──────────────────────────────────
+    - name: Pull gcc image for code execution
+      community.docker.docker_image:
+        name: gcc
+        tag: latest
+        source: pull
+
+    - name: Pull MySQL image
+      community.docker.docker_image:
+        name: mysql
+        tag: "8.0"
+        source: pull
+
+    - name: Pull RabbitMQ image
+      community.docker.docker_image:
+        name: rabbitmq
+        tag: 3.12-management
+        source: pull
+
+    - name: Pull Redis image
+      community.docker.docker_image:
+        name: redis
+        tag: 7-alpine
+        source: pull

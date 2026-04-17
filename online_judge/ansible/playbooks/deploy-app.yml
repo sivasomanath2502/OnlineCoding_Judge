@@ -1,0 +1,93 @@
+---
+- name: Deploy Online Judge Application
+  hosts: app_servers
+  become: yes
+
+  vars:
+    dockerhub_username: "sivasomanath2502"
+    image_tag: "latest"
+    app_dir: "/opt/online-judge"
+
+  tasks:
+
+    # ─── Create app directory ─────────────────────────────────────────
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0755'
+
+    # ─── Copy docker-compose.prod.yml ────────────────────────────────
+    - name: Copy docker-compose file
+      copy:
+        src: "../online_judge/docker-compose.prod.yml"
+        dest: "{{ app_dir }}/docker-compose.prod.yml"
+        mode: '0644'
+
+    # ─── Pull latest images ───────────────────────────────────────────
+    - name: Pull latest submission-service image
+      community.docker.docker_image:
+        name: "{{ dockerhub_username }}/submission-service"
+        tag: "{{ image_tag }}"
+        source: pull
+        force_source: yes
+
+    - name: Pull latest worker-service image
+      community.docker.docker_image:
+        name: "{{ dockerhub_username }}/worker-service"
+        tag: "{{ image_tag }}"
+        source: pull
+        force_source: yes
+
+    - name: Pull latest result-service image
+      community.docker.docker_image:
+        name: "{{ dockerhub_username }}/result-service"
+        tag: "{{ image_tag }}"
+        source: pull
+        force_source: yes
+
+    - name: Pull latest api-gateway image
+      community.docker.docker_image:
+        name: "{{ dockerhub_username }}/api-gateway"
+        tag: "{{ image_tag }}"
+        source: pull
+        force_source: yes
+
+    - name: Pull latest admin-service image
+      community.docker.docker_image:
+        name: "{{ dockerhub_username }}/admin-service"
+        tag: "{{ image_tag }}"
+        source: pull
+        force_source: yes
+
+    # ─── Deploy with docker-compose ───────────────────────────────────
+    - name: Deploy application
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        files:
+          - docker-compose.prod.yml
+        state: present
+        pull: always
+      environment:
+        IMAGE_TAG: "{{ image_tag }}"
+        DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
+
+    # ─── Verify services are running ──────────────────────────────────
+    - name: Wait for API Gateway to be ready
+      wait_for:
+        host: localhost
+        port: 8080
+        delay: 15
+        timeout: 120
+
+    - name: Health check — API Gateway
+      uri:
+        url: http://localhost:8080/actuator/health
+        status_code: 200
+      register: health_check
+      retries: 5
+      delay: 10
+
+    - name: Show health status
+      debug:
+        msg: "Application is UP — {{ health_check.json.status }}"

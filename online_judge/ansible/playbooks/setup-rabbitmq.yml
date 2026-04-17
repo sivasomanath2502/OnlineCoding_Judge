@@ -1,0 +1,41 @@
+---
+- name: Configure RabbitMQ
+  hosts: app_servers
+  become: yes
+
+  tasks:
+
+    - name: Ensure RabbitMQ container is running
+      community.docker.docker_container:
+        name: online-judge-rabbitmq
+        image: rabbitmq:3.12-management
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "5672:5672"
+          - "15672:15672"
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
+
+    - name: Wait for RabbitMQ to be ready
+      wait_for:
+        host: localhost
+        port: 5672
+        delay: 10
+        timeout: 60
+
+    - name: Verify RabbitMQ is responding
+      uri:
+        url: http://localhost:15672/api/overview
+        method: GET
+        user: guest
+        password: guest
+        status_code: 200
+      register: rabbitmq_check
+      retries: 5
+      delay: 5
+
+    - name: RabbitMQ status
+      debug:
+        msg: "RabbitMQ is running — {{ rabbitmq_check.json.rabbitmq_version }}"

@@ -94,7 +94,17 @@ pipeline {
                 }
             }
         }
-
+        stage('Ansible Deploy') {
+            steps {
+                dir('online_judge/ansible') {
+                    sh """
+                        ansible-playbook playbooks/deploy-app.yml \
+                            -e "image_tag=${IMAGE_TAG}" \
+                            -e "dockerhub_username=${DOCKERHUB_USERNAME}"
+                    """
+                }
+            }
+        }
         stage('Deploy') {
             steps {
                 dir('online_judge') {
