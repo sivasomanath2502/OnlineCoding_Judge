@@ -1,5 +1,5 @@
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-COPY target/result-service-1.0.0.jar app.jar
+COPY target/*.jar app.jar
 EXPOSE 8083
 ENTRYPOINT ["java", "-jar", "app.jar"]
