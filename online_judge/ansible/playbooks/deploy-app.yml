@@ -2,7 +2,6 @@
 - name: Deploy Online Judge Application
   hosts: app_servers
   become: yes
-  gather_facts: no
 
   vars:
     dockerhub_username: "sivasomanath2502"
@@ -21,7 +20,7 @@
     # ─── Copy docker-compose.prod.yml ────────────────────────────────
     - name: Copy docker-compose file
       copy:
-        src: "../online_judge/docker-compose.prod.yml"
+        src: "../../docker-compose.prod.yml"
         dest: "{{ app_dir }}/docker-compose.prod.yml"
         mode: '0644'
 
