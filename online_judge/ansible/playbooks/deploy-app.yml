@@ -82,7 +82,7 @@
 
     - name: Health check — API Gateway
       uri:
-        url: http://localhost:8080/actuator/health
+        url: http://localhost:8090/actuator/health
         status_code: 200
       register: health_check
       retries: 5
