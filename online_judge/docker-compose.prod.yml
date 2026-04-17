@@ -19,7 +19,11 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-
+  redis:
+    image: redis:7
+    container_name: online-judge-redis
+    ports:
+      - "6379:6379"
   submission-service:
     image: ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
     container_name: submission-service
