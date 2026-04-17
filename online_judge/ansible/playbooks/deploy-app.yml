@@ -62,12 +62,10 @@
 
     # ─── Deploy with docker-compose ───────────────────────────────────
     - name: Deploy application
-      community.docker.docker_compose_v2:
-        project_src: "{{ app_dir }}"
-        files:
-          - docker-compose.prod.yml
-        state: present
-        pull: always
+      command: >
+        docker-compose -f docker-compose.prod.yml up -d
+      args:
+        chdir: "{{ app_dir }}"
       environment:
         IMAGE_TAG: "{{ image_tag }}"
         DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
