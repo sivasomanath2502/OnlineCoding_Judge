@@ -5,26 +5,23 @@
 
   vars:
     dockerhub_username: "sivasomanath2502"
-    image_tag: "latest"
+    image_tag: "{{ image_tag | default('latest') }}"
     app_dir: "/opt/online-judge"
 
   tasks:
 
-    # ─── Create app directory ─────────────────────────────────────────
     - name: Create application directory
       file:
         path: "{{ app_dir }}"
         state: directory
         mode: '0755'
 
-    # ─── Copy docker-compose.prod.yml ────────────────────────────────
     - name: Copy docker-compose file
       copy:
         src: "../../docker-compose.prod.yml"
         dest: "{{ app_dir }}/docker-compose.prod.yml"
         mode: '0644'
 
-    # ─── Pull latest images ───────────────────────────────────────────
     - name: Pull latest submission-service image
       community.docker.docker_image:
         name: "{{ dockerhub_username }}/submission-service"
@@ -60,31 +57,29 @@
         source: pull
         force_source: yes
 
-    # ─── Deploy with docker-compose ───────────────────────────────────
     - name: Deploy application
-      command: >
+      shell: |
+        docker-compose -f docker-compose.prod.yml down || true
+        IMAGE_TAG={{ image_tag }} DOCKERHUB_USERNAME={{ dockerhub_username }} \
         docker-compose -f docker-compose.prod.yml up -d
       args:
         chdir: "{{ app_dir }}"
-      environment:
-        IMAGE_TAG: "{{ image_tag }}"
-        DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
 
-    # ─── Verify services are running ──────────────────────────────────
-    - name: Wait for API Gateway to be ready
+    - name: Wait for API Gateway port to be ready
       wait_for:
         host: localhost
         port: 8090
-        delay: 15
-        timeout: 120
+        delay: 20
+        timeout: 180
 
     - name: Health check — API Gateway
       uri:
         url: http://localhost:8090/actuator/health
         status_code: 200
       register: health_check
-      retries: 5
-      delay: 10
+      retries: 10
+      delay: 15
+      until: health_check.status == 200
 
     - name: Show health status
       debug:

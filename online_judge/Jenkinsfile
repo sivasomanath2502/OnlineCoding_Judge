@@ -79,6 +79,7 @@ pipeline {
                 }
             }
         }
+
         stage('Ansible Deploy') {
             steps {
                 dir('online_judge/ansible') {
@@ -86,20 +87,6 @@ pipeline {
                         ansible-playbook playbooks/deploy-app.yml \
                             -e "image_tag=${IMAGE_TAG}" \
                             -e "dockerhub_username=${DOCKERHUB_USERNAME}"
-                    """
-                }
-            }
-        }
-        stage('Deploy') {
-            steps {
-                dir('online_judge') {
-                    sh """
-                        set -e
-                        docker-compose -f docker-compose.prod.yml down || true
-                        docker rm -f result-service submission-service \
-                                     worker-service api-gateway admin-service || true
-                        IMAGE_TAG=${IMAGE_TAG} DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} \
-                        docker-compose -f docker-compose.prod.yml up -d
                     """
                 }
             }
