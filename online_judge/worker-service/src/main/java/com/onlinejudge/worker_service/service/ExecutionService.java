@@ -26,9 +26,13 @@ public class ExecutionService {
     @Value("${execution.cpu.limit}")
     private String cpuLimit;
 
-    // Host-mounted shared directory — must match docker-compose volume
-    @Value("${execution.temp.dir:/tmp/judge}")
+    // Path inside worker container (for file I/O)
+    @Value("${execution.temp.dir:/judge-tmp}")
     private String tempBaseDir;
+
+    // Path on HOST machine (for docker -v mount passed to gcc container)
+    @Value("${execution.host.temp.dir:/tmp/judge}")
+    private String hostTempBaseDir;
 
     public ExecutionResult execute(Submission submission,
                                    List<TestCase> testCases) {
@@ -36,7 +40,7 @@ public class ExecutionService {
         Path tempDir = null;
 
         try {
-            // ─── Create temp dir inside the HOST-MOUNTED shared path ──
+            // Create temp dir inside the container-side mounted path
             Path base = Paths.get(tempBaseDir);
             Files.createDirectories(base);
             tempDir = Files.createTempDirectory(base, "judge_" + submission.getId());
@@ -125,16 +129,25 @@ public class ExecutionService {
     }
 
     // ─────────────────────────────────────────────────────────────────
+    // Convert container-side tempDir path → host-side path
+    // e.g. /judge-tmp/judge_abc123 → /tmp/judge/judge_abc123
+    // This host path is what docker -v needs when spawning gcc container
+    // ─────────────────────────────────────────────────────────────────
+    private String toHostPath(Path tempDir) {
+        Path containerBase = Paths.get(tempBaseDir);
+        Path relative = containerBase.relativize(tempDir.toAbsolutePath());
+        return Paths.get(hostTempBaseDir).resolve(relative).toString();
+    }
+
+    // ─────────────────────────────────────────────────────────────────
     // COMPILE
-    // Uses the HOST path of tempDir as volume mount so gcc container
-    // can actually see the files written by the worker container
     // ─────────────────────────────────────────────────────────────────
     private String compile(Path tempDir, String dockerImage, String compileCmd)
             throws IOException, InterruptedException {
 
-        // tempDir is inside tempBaseDir which is host-mounted,
-        // so toAbsolutePath() gives the real host path
-        String hostPath = tempDir.toAbsolutePath().toString();
+        String hostPath = toHostPath(tempDir);
+
+        log.info("Compiling with host path: {}", hostPath);
 
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "run", "--rm",
@@ -174,11 +187,12 @@ public class ExecutionService {
 
         long startMs = System.currentTimeMillis();
 
-        // Write input to file
         Path inputFile = tempDir.resolve("input.txt");
         Files.writeString(inputFile, testCase.getInput());
 
-        String hostPath = tempDir.toAbsolutePath().toString();
+        String hostPath = toHostPath(tempDir);
+
+        log.info("Running test case with host path: {}", hostPath);
 
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "run", "--rm",
