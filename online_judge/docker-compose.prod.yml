@@ -39,6 +39,10 @@ services:
       - rabbitmq
 
   worker-service:
+    image: ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
+    container_name: worker-service
+    ports:
+      - "8082:8082"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/online_judge
       SPRING_DATASOURCE_USERNAME: root
