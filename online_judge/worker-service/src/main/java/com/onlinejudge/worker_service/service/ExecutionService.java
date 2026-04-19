@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -30,7 +31,7 @@ public class ExecutionService {
     @Value("${execution.temp.dir:/judge-tmp}")
     private String tempBaseDir;
 
-    // Path on HOST machine (for docker -v mount passed to gcc container)
+    // Path on HOST machine (for docker -v mount passed to gcc/python/java container)
     @Value("${execution.host.temp.dir:/tmp/judge}")
     private String hostTempBaseDir;
 
@@ -46,13 +47,14 @@ public class ExecutionService {
             tempDir = Files.createTempDirectory(base, "judge_" + submission.getId());
 
             // ─── Step 1: Write code to file ──────────────────────────
-            String extension = getExtension(submission.getLanguage().getName());
-            Path sourceFile = tempDir.resolve("solution" + extension);
+            String sourceFileName = getSourceFileName(
+                    submission.getLanguage().getName());
+            Path sourceFile = tempDir.resolve(sourceFileName);
             Files.writeString(sourceFile, submission.getCode());
 
             log.info("Source file written: {}", sourceFile);
 
-            // ─── Step 2: Compile inside Docker ───────────────────────
+            // ─── Step 2: Compile inside Docker (skipped for interpreted langs) ──
             String compilationError = compile(
                     tempDir,
                     submission.getLanguage().getDockerImage(),
@@ -71,7 +73,7 @@ public class ExecutionService {
                         .build();
             }
 
-            log.info("Compilation successful for submissionId={}",
+            log.info("Compilation successful (or skipped) for submissionId={}",
                     submission.getId());
 
             // ─── Step 3: Run against each test case ──────────────────
@@ -131,7 +133,6 @@ public class ExecutionService {
     // ─────────────────────────────────────────────────────────────────
     // Convert container-side tempDir path → host-side path
     // e.g. /judge-tmp/judge_abc123 → /tmp/judge/judge_abc123
-    // This host path is what docker -v needs when spawning gcc container
     // ─────────────────────────────────────────────────────────────────
     private String toHostPath(Path tempDir) {
         Path containerBase = Paths.get(tempBaseDir);
@@ -141,26 +142,35 @@ public class ExecutionService {
 
     // ─────────────────────────────────────────────────────────────────
     // COMPILE
+    // Skipped entirely for interpreted languages (Python)
+    // compileCmd is null/blank for Python → returns null (success)
     // ─────────────────────────────────────────────────────────────────
     private String compile(Path tempDir, String dockerImage, String compileCmd)
             throws IOException, InterruptedException {
 
-        String hostPath = toHostPath(tempDir);
+        // No compile step for interpreted languages like Python
+        if (compileCmd == null || compileCmd.isBlank()) {
+            log.info("No compilation needed for this language");
+            return null;
+        }
 
+        String hostPath = toHostPath(tempDir);
         log.info("Compiling with host path: {}", hostPath);
 
-        ProcessBuilder pb = new ProcessBuilder(
+        List<String> command = new ArrayList<>();
+        command.addAll(List.of(
                 "docker", "run", "--rm",
-                "--pull", "never",           // ← ADD THIS — use local image only
+                "--pull", "never",
                 "--network=none",
                 "--memory=" + memoryLimit,
                 "--cpus=" + cpuLimit,
                 "-v", hostPath + ":/code",
                 "-w", "/code",
                 dockerImage,
-                "sh", "-c", compileCmd
-        );
+                "sh", "-c", compileCmd   // use full compileCmd as-is from DB
+        ));
 
+        ProcessBuilder pb = new ProcessBuilder(command);
         pb.redirectErrorStream(true);
         Process process = pb.start();
 
@@ -179,6 +189,10 @@ public class ExecutionService {
 
     // ─────────────────────────────────────────────────────────────────
     // RUN ONE TEST CASE
+    // Uses runCmd from DB — works for all languages
+    // C++:    ./solution
+    // Python: python3 solution.py
+    // Java:   java solution
     // ─────────────────────────────────────────────────────────────────
     private TestCaseResult runTestCase(Path tempDir,
                                        TestCase testCase,
@@ -192,12 +206,11 @@ public class ExecutionService {
         Files.writeString(inputFile, testCase.getInput());
 
         String hostPath = toHostPath(tempDir);
-
         log.info("Running test case with host path: {}", hostPath);
 
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "run", "--rm",
-                "--pull", "never",           // ← ADD THIS
+                "--pull", "never",
                 "--network=none",
                 "--memory=" + memoryLimit,
                 "--cpus=" + cpuLimit,
@@ -254,14 +267,14 @@ public class ExecutionService {
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Get file extension based on language name
+    // Get source filename based on language name
     // ─────────────────────────────────────────────────────────────────
-    private String getExtension(String languageName) {
-        if (languageName == null) return ".cpp";
+    private String getSourceFileName(String languageName) {
+        if (languageName == null) return "solution.cpp";
         return switch (languageName.toLowerCase()) {
-            case "python" -> ".py";
-            case "java"   -> ".java";
-            default       -> ".cpp";
+            case "python" -> "solution.py";
+            case "java"   -> "solution.java";
+            default       -> "solution.cpp";
         };
     }
 
