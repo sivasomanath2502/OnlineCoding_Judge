@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 import java.nio.file.*;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -27,18 +26,24 @@ public class ExecutionService {
     @Value("${execution.cpu.limit}")
     private String cpuLimit;
 
+    // Host-mounted shared directory — must match docker-compose volume
+    @Value("${execution.temp.dir:/tmp/judge}")
+    private String tempBaseDir;
+
     public ExecutionResult execute(Submission submission,
                                    List<TestCase> testCases) {
 
-        // Create unique temp directory for this submission
         Path tempDir = null;
 
         try {
-            tempDir = Files.createTempDirectory(
-                    "judge_" + submission.getId());
+            // ─── Create temp dir inside the HOST-MOUNTED shared path ──
+            Path base = Paths.get(tempBaseDir);
+            Files.createDirectories(base);
+            tempDir = Files.createTempDirectory(base, "judge_" + submission.getId());
 
             // ─── Step 1: Write code to file ──────────────────────────
-            Path sourceFile = tempDir.resolve("solution.cpp");
+            String extension = getExtension(submission.getLanguage().getName());
+            Path sourceFile = tempDir.resolve("solution" + extension);
             Files.writeString(sourceFile, submission.getCode());
 
             log.info("Source file written: {}", sourceFile);
@@ -46,12 +51,13 @@ public class ExecutionService {
             // ─── Step 2: Compile inside Docker ───────────────────────
             String compilationError = compile(
                     tempDir,
-                    submission.getLanguage().getDockerImage()
+                    submission.getLanguage().getDockerImage(),
+                    submission.getLanguage().getCompileCmd()
             );
 
             if (compilationError != null) {
-                log.warn("Compilation failed for submissionId={}",
-                        submission.getId());
+                log.warn("Compilation failed for submissionId={}, error={}",
+                        submission.getId(), compilationError);
                 return ExecutionResult.builder()
                         .verdict(Verdict.COMPILATION_ERROR)
                         .executionMs(0)
@@ -73,7 +79,8 @@ public class ExecutionService {
                 TestCaseResult result = runTestCase(
                         tempDir,
                         testCase,
-                        submission.getLanguage().getDockerImage()
+                        submission.getLanguage().getDockerImage(),
+                        submission.getLanguage().getRunCmd()
                 );
 
                 totalMs += result.executionMs;
@@ -81,7 +88,6 @@ public class ExecutionService {
                 if (result.verdict == Verdict.ACCEPTED) {
                     passed++;
                 } else {
-                    // Return immediately on first failure
                     return ExecutionResult.builder()
                             .verdict(result.verdict)
                             .executionMs((int) totalMs)
@@ -112,7 +118,6 @@ public class ExecutionService {
                     .errorMessage(e.getMessage())
                     .build();
         } finally {
-            // ─── Always clean up temp directory ──────────────────────
             if (tempDir != null) {
                 deleteDirectory(tempDir.toFile());
             }
@@ -121,30 +126,33 @@ public class ExecutionService {
 
     // ─────────────────────────────────────────────────────────────────
     // COMPILE
-    // Runs: docker run --rm -v <tempDir>:/code <image> g++ -o solution solution.cpp
+    // Uses the HOST path of tempDir as volume mount so gcc container
+    // can actually see the files written by the worker container
     // ─────────────────────────────────────────────────────────────────
-    private String compile(Path tempDir, String dockerImage)
+    private String compile(Path tempDir, String dockerImage, String compileCmd)
             throws IOException, InterruptedException {
+
+        // tempDir is inside tempBaseDir which is host-mounted,
+        // so toAbsolutePath() gives the real host path
+        String hostPath = tempDir.toAbsolutePath().toString();
 
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "run", "--rm",
                 "--network=none",
                 "--memory=" + memoryLimit,
                 "--cpus=" + cpuLimit,
-                "-v", tempDir.toAbsolutePath() + ":/code",
+                "-v", hostPath + ":/code",
                 "-w", "/code",
                 dockerImage,
-                "g++", "-o", "solution", "solution.cpp"
+                "sh", "-c", compileCmd
         );
 
         pb.redirectErrorStream(true);
         Process process = pb.start();
 
-        String output = new String(
-                process.getInputStream().readAllBytes());
+        String output = new String(process.getInputStream().readAllBytes());
 
-        boolean finished = process.waitFor(
-                timeoutSeconds, TimeUnit.SECONDS);
+        boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
 
         if (!finished) {
             process.destroyForcibly();
@@ -152,11 +160,7 @@ public class ExecutionService {
         }
 
         int exitCode = process.exitValue();
-        if (exitCode != 0) {
-            return output; // compiler error message
-        }
-
-        return null; // null = success
+        return exitCode != 0 ? output : null;
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -164,36 +168,35 @@ public class ExecutionService {
     // ─────────────────────────────────────────────────────────────────
     private TestCaseResult runTestCase(Path tempDir,
                                        TestCase testCase,
-                                       String dockerImage)
+                                       String dockerImage,
+                                       String runCmd)
             throws IOException, InterruptedException {
 
         long startMs = System.currentTimeMillis();
 
-        // ─── 1. WRITE INPUT TO FILE ─────────────────────────────────────
+        // Write input to file
         Path inputFile = tempDir.resolve("input.txt");
         Files.writeString(inputFile, testCase.getInput());
 
-        // ─── 2. RUN PROGRAM USING INPUT REDIRECTION ─────────────────────
+        String hostPath = tempDir.toAbsolutePath().toString();
+
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "run", "--rm",
                 "--network=none",
                 "--memory=" + memoryLimit,
                 "--cpus=" + cpuLimit,
-                "-v", tempDir.toAbsolutePath() + ":/code",   // IMPORTANT: remove :ro
+                "-v", hostPath + ":/code",
                 "-w", "/code",
                 dockerImage,
-                "sh", "-c", "./solution < input.txt"
+                "sh", "-c", runCmd + " < input.txt"
         );
 
         pb.redirectErrorStream(false);
         Process process = pb.start();
 
-        // ─── 3. WAIT FOR EXECUTION ──────────────────────────────────────
         boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
-
         long executionMs = System.currentTimeMillis() - startMs;
 
-        // ─── 4. HANDLE TIMEOUT ──────────────────────────────────────────
         if (!finished) {
             process.destroyForcibly();
             return new TestCaseResult(
@@ -203,18 +206,14 @@ public class ExecutionService {
             );
         }
 
-        // ─── 5. READ OUTPUT AFTER PROCESS COMPLETES ─────────────────────
         String actualOutput = new String(
-                process.getInputStream().readAllBytes()
-        ).trim();
+                process.getInputStream().readAllBytes()).trim();
 
         String errorOutput = new String(
-                process.getErrorStream().readAllBytes()
-        ).trim();
+                process.getErrorStream().readAllBytes()).trim();
 
         int exitCode = process.exitValue();
 
-        // ─── 6. RUNTIME ERROR ───────────────────────────────────────────
         if (exitCode != 0) {
             return new TestCaseResult(
                     Verdict.RUNTIME_ERROR,
@@ -225,15 +224,10 @@ public class ExecutionService {
             );
         }
 
-        // ─── 7. OUTPUT COMPARISON ───────────────────────────────────────
         String expectedOutput = testCase.getExpectedOutput().trim();
 
         if (actualOutput.equals(expectedOutput)) {
-            return new TestCaseResult(
-                    Verdict.ACCEPTED,
-                    (int) executionMs,
-                    null
-            );
+            return new TestCaseResult(Verdict.ACCEPTED, (int) executionMs, null);
         } else {
             return new TestCaseResult(
                     Verdict.WRONG_ANSWER,
@@ -244,24 +238,19 @@ public class ExecutionService {
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Internal result carrier for one test case
+    // Get file extension based on language name
     // ─────────────────────────────────────────────────────────────────
-    private static class TestCaseResult {
-        Verdict verdict;
-        int executionMs;
-        String errorMessage;
-
-        TestCaseResult(Verdict verdict,
-                       int executionMs,
-                       String errorMessage) {
-            this.verdict = verdict;
-            this.executionMs = executionMs;
-            this.errorMessage = errorMessage;
-        }
+    private String getExtension(String languageName) {
+        if (languageName == null) return ".cpp";
+        return switch (languageName.toLowerCase()) {
+            case "python" -> ".py";
+            case "java"   -> ".java";
+            default       -> ".cpp";
+        };
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Cleanup temp directory
+    // Cleanup
     // ─────────────────────────────────────────────────────────────────
     private void deleteDirectory(File directory) {
         File[] files = directory.listFiles();
@@ -271,5 +260,17 @@ public class ExecutionService {
             }
         }
         directory.delete();
+    }
+
+    private static class TestCaseResult {
+        Verdict verdict;
+        int executionMs;
+        String errorMessage;
+
+        TestCaseResult(Verdict verdict, int executionMs, String errorMessage) {
+            this.verdict = verdict;
+            this.executionMs = executionMs;
+            this.errorMessage = errorMessage;
+        }
     }
 }
