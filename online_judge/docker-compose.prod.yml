@@ -77,6 +77,7 @@ services:
     depends_on:
       - submission-service
       - result-service
+      - redis
   admin-service:
     image: ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG}
     container_name: admin-service

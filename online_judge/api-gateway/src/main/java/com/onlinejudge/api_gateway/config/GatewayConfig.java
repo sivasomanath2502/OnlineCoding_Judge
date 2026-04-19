@@ -59,7 +59,7 @@ public class GatewayConfig {
                                         .setDenyEmptyKey(false)
                                         .setStatusCode(HttpStatus.TOO_MANY_REQUESTS))
                         )
-                        .uri("http://localhost:8081"))
+                        .uri("http://submission-service:8081"))
 
                 // ─── Result Service ───────────────────────────────────
                 .route("result-service", r -> r
@@ -68,7 +68,7 @@ public class GatewayConfig {
                                 .addRequestHeader("X-Service", "result-service")
                                 .addRequestHeader("X-Gateway-Version", "1.0")
                         )
-                        .uri("http://localhost:8083"))
+                        .uri("http://result-service:8083"))
 
                 // ─── Admin Service ────────────────────────────────────
                 .route("admin-service", r -> r
@@ -77,7 +77,7 @@ public class GatewayConfig {
                                 .addRequestHeader("X-Service", "admin-service")
                                 .addRequestHeader("X-Gateway-Version", "1.0")
                         )
-                        .uri("http://localhost:8084"))
+                        .uri("http://admin-service:8084"))
 
                 .build();
     }

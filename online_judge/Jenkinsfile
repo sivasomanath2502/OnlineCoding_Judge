@@ -9,7 +9,6 @@ pipeline {
     environment {
         DOCKERHUB_USERNAME = 'sivasomanath2502'
         IMAGE_TAG = "${BUILD_NUMBER}"
-        DOCKER_BUILDKIT = '0'
     }
 
     stages {
@@ -35,6 +34,12 @@ pipeline {
             }
         }
 
+        stage('Unit Tests') {
+            steps {
+                echo 'Skipping tests (not implemented yet)'
+            }
+        }
+
         stage('Docker Build') {
             steps {
                 dir('online_judge') {
@@ -51,36 +56,46 @@ pipeline {
 
         stage('Docker Push') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'docker-hub-credential',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    retry(3) {
-                        sh """
-                            echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+               withCredentials([usernamePassword(
+                   credentialsId: 'docker-hub-credential',
+                   usernameVariable: 'DOCKER_USER',
+                   passwordVariable: 'DOCKER_PASS'
+               )]) {
+                   retry(3) {
+                       sh """
+                           echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
 
-                            docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
-                            docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
-                            docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
-                            docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
-                            docker push ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG}
+                           docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
+                           docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
+                           docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
+                           docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
+                           docker push ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG}
 
-                            docker logout
-                        """
-                    }
+                           docker logout
+                       """
+                   }
+               }
+            }
+        }
+        stage('Ansible Deploy') {
+            steps {
+                dir('online_judge/ansible') {
+                    sh """
+                        ansible-playbook playbooks/deploy-app.yml \
+                            -e "image_tag=${IMAGE_TAG}" \
+                            -e "dockerhub_username=${DOCKERHUB_USERNAME}"
+                    """
                 }
             }
         }
-
         stage('Deploy') {
             steps {
                 dir('online_judge') {
                     sh """
                         set -e
                         docker-compose -f docker-compose.prod.yml down || true
-                        docker rm -f result-service submission-service worker-service api-gateway admin-service || true
-
+                        docker rm -f result-service submission-service \
+                                     worker-service api-gateway admin-service || true
                         IMAGE_TAG=${IMAGE_TAG} DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} \
                         docker-compose -f docker-compose.prod.yml up -d
                     """
