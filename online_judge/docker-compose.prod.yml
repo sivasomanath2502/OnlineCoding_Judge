@@ -72,8 +72,8 @@ services:
     ports:
       - "8090:8090"
     environment:
-      SPRING_CLOUD_GATEWAY_ROUTES_0_URI: http://submission-service:8081
-      SPRING_CLOUD_GATEWAY_ROUTES_1_URI: http://result-service:8083
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
       - submission-service
       - result-service
