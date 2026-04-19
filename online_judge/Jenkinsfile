@@ -9,7 +9,6 @@ pipeline {
     environment {
         DOCKERHUB_USERNAME = 'sivasomanath2502'
         IMAGE_TAG = "${BUILD_NUMBER}"
-        DOCKER_BUILDKIT = '1'
     }
 
     stages {
