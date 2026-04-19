@@ -151,6 +151,7 @@ public class ExecutionService {
 
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "run", "--rm",
+                "--pull", "never",           // ← ADD THIS — use local image only
                 "--network=none",
                 "--memory=" + memoryLimit,
                 "--cpus=" + cpuLimit,
@@ -196,6 +197,7 @@ public class ExecutionService {
 
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "run", "--rm",
+                "--pull", "never",           // ← ADD THIS
                 "--network=none",
                 "--memory=" + memoryLimit,
                 "--cpus=" + cpuLimit,
