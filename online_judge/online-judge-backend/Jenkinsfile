@@ -28,7 +28,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                dir('online_judge') {
+                dir('online_judge/online-judge-backend') {
                     sh 'mvn -B clean package -DskipTests'
                 }
             }
@@ -42,7 +42,7 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                dir('online_judge') {
+                dir('online_judge/online-judge-backend') {
                     sh """
                         docker build -t ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG} ./submission-service
                         docker build -t ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG} ./worker-service
@@ -82,7 +82,7 @@ pipeline {
 
         stage('Ansible Deploy') {
             steps {
-                dir('online_judge/ansible') {
+                dir('online_judge/online-judge-backend/ansible') {
                     sh """
                         ansible-playbook playbooks/deploy-app.yml \
                             -e "image_tag=${IMAGE_TAG}" \
