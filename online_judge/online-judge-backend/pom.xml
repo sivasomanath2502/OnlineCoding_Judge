@@ -51,7 +51,7 @@
         </dependencies>
     </dependencyManagement>
 
-    <!-- 🔥 Plugin management (BIG FIX) -->
+    <!-- Plugin management (BIG FIX) -->
     <build>
         <pluginManagement>
             <plugins>
