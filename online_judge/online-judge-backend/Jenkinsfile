@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB_USERNAME = 'sivasomanath2502'
+        IMAGE_TAG = 'latest'   // simple deploy using latest
     }
 
     stages {
@@ -28,17 +29,7 @@ pipeline {
                     env.BUILD_RESULT     = changedFiles.contains('result-service')     ? 'true' : 'false'
                     env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')        ? 'true' : 'false'
                     env.BUILD_ADMIN      = changedFiles.contains('admin-service')      ? 'true' : 'false'
-                    env.BUILD_FRONTEND   = changedFiles.contains('online-judge-frontend')    ? 'true' : 'false'
-
-                    echo """
-                    Build flags:
-                    submission-service : ${env.BUILD_SUBMISSION}
-                    worker-service     : ${env.BUILD_WORKER}
-                    result-service     : ${env.BUILD_RESULT}
-                    api-gateway        : ${env.BUILD_GATEWAY}
-                    admin-service      : ${env.BUILD_ADMIN}
-                    online-judge-frontend    : ${env.BUILD_FRONTEND}
-                    """
+                    env.BUILD_FRONTEND   = changedFiles.contains('online-judge-frontend') ? 'true' : 'false'
                 }
             }
         }
@@ -88,23 +79,13 @@ pipeline {
             }
         }
 
-//         stage('Deploy') {
-//             when {
-//                 expression {
-//                     return env.BUILD_SUBMISSION == 'true' ||
-//                            env.BUILD_WORKER == 'true' ||
-//                            env.BUILD_RESULT == 'true' ||
-//                            env.BUILD_GATEWAY == 'true' ||
-//                            env.BUILD_ADMIN == 'true' ||
-//                            env.BUILD_FRONTEND == 'true'
-//                 }
-//             }
+        stage('Deploy (Ansible)') {
             steps {
                 lock('deploy-lock') {
                     dir('online_judge/online-judge-backend/ansible') {
                         sh """
                             ansible-playbook playbooks/deploy-app.yml \
-                                -e "image_tag=latest" \
+                                -e "image_tag=${IMAGE_TAG}" \
                                 -e "dockerhub_username=${DOCKERHUB_USERNAME}"
                         """
                     }
