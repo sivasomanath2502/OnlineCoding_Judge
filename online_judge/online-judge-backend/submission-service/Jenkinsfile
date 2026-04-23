@@ -79,13 +79,14 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                dir("${ROOT_DIR}/ansible") {
-                    sh """
-                        ansible-playbook playbooks/deploy-service.yml \
-                            -e "service_name=${SERVICE_NAME}" \
-                            -e "image_tag=${IMAGE_TAG}" \
-                            -e "dockerhub_username=${DOCKERHUB_USERNAME}"
-                    """
+                lock('deploy-lock') {
+                    dir("${ROOT_DIR}/ansible") {
+                        sh """
+                            ansible-playbook playbooks/deploy-app.yml \
+                                -e "image_tag=${IMAGE_TAG}" \
+                                -e "dockerhub_username=${DOCKERHUB_USERNAME}"
+                        """
+                    }
                 }
             }
         }
