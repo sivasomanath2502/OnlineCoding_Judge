@@ -88,17 +88,17 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            when {
-                expression {
-                    return env.BUILD_SUBMISSION == 'true' ||
-                           env.BUILD_WORKER == 'true' ||
-                           env.BUILD_RESULT == 'true' ||
-                           env.BUILD_GATEWAY == 'true' ||
-                           env.BUILD_ADMIN == 'true' ||
-                           env.BUILD_FRONTEND == 'true'
-                }
-            }
+//         stage('Deploy') {
+//             when {
+//                 expression {
+//                     return env.BUILD_SUBMISSION == 'true' ||
+//                            env.BUILD_WORKER == 'true' ||
+//                            env.BUILD_RESULT == 'true' ||
+//                            env.BUILD_GATEWAY == 'true' ||
+//                            env.BUILD_ADMIN == 'true' ||
+//                            env.BUILD_FRONTEND == 'true'
+//                 }
+//             }
             steps {
                 lock('deploy-lock') {
                     dir('online_judge/online-judge-backend/ansible') {
