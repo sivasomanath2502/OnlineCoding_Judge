@@ -1,114 +1,127 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'Maven 3'
-        jdk 'JDK 17'
-    }
-
     environment {
         DOCKERHUB_USERNAME = 'sivasomanath2502'
-        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
 
-        stage('Check Docker') {
-            steps {
-                sh 'docker --version'
-            }
-        }
-
         stage('Checkout') {
             steps {
-                echo 'Checking out source code...'
                 checkout scm
             }
         }
 
-        stage('Build') {
+        stage('Detect Changes') {
             steps {
-                dir('online_judge/online-judge-backend') {
-                    sh 'mvn -B clean package -DskipTests'
-                }
-            }
-        }
+                script {
+                    def changedFiles = sh(
+                        script: "git diff --name-only origin/main...HEAD || git diff --name-only HEAD~1 HEAD",
+                        returnStdout: true
+                    ).trim()
 
-        stage('Unit Tests') {
-            steps {
-                echo 'Skipping tests (not implemented yet)'
-            }
-        }
+                    echo "Changed files:\n${changedFiles}"
 
-        stage('Docker Build') {
-            steps {
-                dir('online_judge/online-judge-backend') {
-                    sh """
-                        docker build -t ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/submission-service:latest ./submission-service
-                        docker build -t ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/worker-service:latest ./worker-service
-                        docker build -t ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/result-service:latest ./result-service
-                        docker build -t ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/api-gateway:latest ./api-gateway
-                        docker build -t ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/admin-service:latest ./admin-service
+                    env.BUILD_SUBMISSION = changedFiles.contains('submission-service') ? 'true' : 'false'
+                    env.BUILD_WORKER     = changedFiles.contains('worker-service')     ? 'true' : 'false'
+                    env.BUILD_RESULT     = changedFiles.contains('result-service')     ? 'true' : 'false'
+                    env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')        ? 'true' : 'false'
+                    env.BUILD_ADMIN      = changedFiles.contains('admin-service')      ? 'true' : 'false'
+                    env.BUILD_FRONTEND   = changedFiles.contains('online-judge-frontend')    ? 'true' : 'false'
+
+                    echo """
+                    Build flags:
+                    submission-service : ${env.BUILD_SUBMISSION}
+                    worker-service     : ${env.BUILD_WORKER}
+                    result-service     : ${env.BUILD_RESULT}
+                    api-gateway        : ${env.BUILD_GATEWAY}
+                    admin-service      : ${env.BUILD_ADMIN}
+                    online-judge-frontend    : ${env.BUILD_FRONTEND}
                     """
                 }
             }
         }
 
-        stage('Docker Push') {
+        stage('Trigger Service Pipelines') {
             steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-credential',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        retry(3) {
-                            sh """
-                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                script {
+                    parallel (
 
-                                docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/submission-service:latest
+                        submission: {
+                            if (env.BUILD_SUBMISSION == 'true') {
+                                build job: 'submission-service', wait: true
+                            }
+                        },
 
-                                docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/worker-service:latest
+                        worker: {
+                            if (env.BUILD_WORKER == 'true') {
+                                build job: 'worker-service', wait: true
+                            }
+                        },
 
-                                docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/result-service:latest
+                        result: {
+                            if (env.BUILD_RESULT == 'true') {
+                                build job: 'result-service', wait: true
+                            }
+                        },
 
-                                docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/api-gateway:latest
+                        gateway: {
+                            if (env.BUILD_GATEWAY == 'true') {
+                                build job: 'api-gateway', wait: true
+                            }
+                        },
 
-                                docker push ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/admin-service:latest
+                        admin: {
+                            if (env.BUILD_ADMIN == 'true') {
+                                build job: 'admin-service', wait: true
+                            }
+                        },
 
-                                docker logout
-                            """
+                        frontend: {
+                            if (env.BUILD_FRONTEND == 'true') {
+                                build job: 'online-judge-frontend', wait: true
+                            }
                         }
+                    )
+                }
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                expression {
+                    return env.BUILD_SUBMISSION == 'true' ||
+                           env.BUILD_WORKER == 'true' ||
+                           env.BUILD_RESULT == 'true' ||
+                           env.BUILD_GATEWAY == 'true' ||
+                           env.BUILD_ADMIN == 'true' ||
+                           env.BUILD_FRONTEND == 'true'
+                }
+            }
+            steps {
+                lock('deploy-lock') {
+                    dir('online_judge/online-judge-backend/ansible') {
+                        sh """
+                            ansible-playbook playbooks/deploy-app.yml \
+                                -e "image_tag=latest" \
+                                -e "dockerhub_username=${DOCKERHUB_USERNAME}"
+                        """
                     }
                 }
             }
         }
-
-        stage('Ansible Deploy') {
-            steps {
-                dir('online_judge/online-judge-backend/ansible') {
-                    sh """
-                        ansible-playbook playbooks/deploy-app.yml \
-                            -e "image_tag=${IMAGE_TAG}" \
-                            -e "dockerhub_username=${DOCKERHUB_USERNAME}"
-                    """
-                }
-            }
-        }
     }
+
     post {
         success {
-            echo '✅ Pipeline completed successfully!'
+            echo '✅ Root pipeline completed successfully!'
         }
         failure {
-            echo '❌ Pipeline failed!'
+            echo '❌ Root pipeline failed!'
         }
         always {
+            sh 'docker system prune -f --filter "until=2h" || true'
             echo 'Pipeline finished.'
         }
     }

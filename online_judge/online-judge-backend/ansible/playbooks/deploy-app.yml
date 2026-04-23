@@ -57,6 +57,13 @@
         source: pull
         force_source: yes
 
+    - name: Pull latest frontend image
+      community.docker.docker_image:
+        name: "{{ dockerhub_username }}/online-judge-frontend"
+        tag: "{{ image_tag }}"
+        source: pull
+        force_source: yes
+
     - name: Deploy application
       shell: |
         docker-compose -f docker-compose.prod.yml down || true
