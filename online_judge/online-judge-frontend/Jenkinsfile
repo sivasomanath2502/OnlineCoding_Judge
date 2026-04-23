@@ -31,13 +31,11 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                dir('online-judge-frontend') {
-                    sh """
-                        docker build \
-                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
-                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
-                    """
-                }
+                sh """
+                    docker build \
+                    -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
+                    -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
+                """
             }
         }
 
