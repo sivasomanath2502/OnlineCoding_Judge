@@ -1,32 +1,51 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'Maven 3'
-        jdk 'JDK 17'
-    }
-
     environment {
         DOCKERHUB_USERNAME = 'sivasomanath2502'
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_TAG          = "${BUILD_NUMBER}"
     }
 
     stages {
 
-        stage('Check Docker') {
-            steps {
-                sh 'docker --version'
-            }
-        }
-
         stage('Checkout') {
             steps {
-                echo 'Checking out source code...'
                 checkout scm
             }
         }
 
-        stage('Build') {
+        stage('Detect Changes') {
+            steps {
+                script {
+                    // Get list of changed files since last successful build
+                    def changedFiles = sh(
+                        script: "git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Changed files:\n${changedFiles}"
+
+                    env.BUILD_SUBMISSION = changedFiles.contains('submission-service') ? 'true' : 'false'
+                    env.BUILD_WORKER     = changedFiles.contains('worker-service')     ? 'true' : 'false'
+                    env.BUILD_RESULT     = changedFiles.contains('result-service')     ? 'true' : 'false'
+                    env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')        ? 'true' : 'false'
+                    env.BUILD_ADMIN      = changedFiles.contains('admin-service')      ? 'true' : 'false'
+                    env.BUILD_FRONTEND   = changedFiles.contains('wecode-frontend')    ? 'true' : 'false'
+
+                    echo """
+                    Build flags:
+                    submission-service : ${env.BUILD_SUBMISSION}
+                    worker-service     : ${env.BUILD_WORKER}
+                    result-service     : ${env.BUILD_RESULT}
+                    api-gateway        : ${env.BUILD_GATEWAY}
+                    admin-service      : ${env.BUILD_ADMIN}
+                    wecode-frontend    : ${env.BUILD_FRONTEND}
+                    """
+                }
+            }
+        }
+
+        stage('Build All Services') {
             steps {
                 dir('online_judge/online-judge-backend') {
                     sh 'mvn -B clean package -DskipTests'
@@ -34,53 +53,174 @@ pipeline {
             }
         }
 
-        stage('Unit Tests') {
-            steps {
-                echo 'Skipping tests (not implemented yet)'
-            }
-        }
+        stage('Docker Build & Push') {
+            parallel {
 
-        stage('Docker Build') {
-            steps {
-                dir('online_judge/online-judge-backend') {
-                    sh """
-                        docker build -t ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG} ./submission-service
-                        docker build -t ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG} ./worker-service
-                        docker build -t ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG} ./result-service
-                        docker build -t ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG} ./api-gateway
-                        docker build -t ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG} ./admin-service
-                    """
-                }
-            }
-        }
-
-        stage('Docker Push') {
-            steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-credential',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        retry(3) {
+                stage('submission-service') {
+                    when { expression { env.BUILD_SUBMISSION == 'true' } }
+                    steps {
+                        dir('online_judge/online-judge-backend/submission-service') {
                             sh """
-                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
-
-                                docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
-                                docker push ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG}
-
-                                docker logout
+                                docker build \
+                                    -t ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG} \
+                                    -t ${DOCKERHUB_USERNAME}/submission-service:latest .
                             """
+                        }
+                        withCredentials([usernamePassword(
+                            credentialsId: 'docker-hub-credential',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )]) {
+                            retry(3) {
+                                sh """
+                                    echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                                    docker push ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
+                                    docker push ${DOCKERHUB_USERNAME}/submission-service:latest
+                                    docker logout
+                                """
+                            }
+                        }
+                    }
+                }
+
+                stage('worker-service') {
+                    when { expression { env.BUILD_WORKER == 'true' } }
+                    steps {
+                        dir('online_judge/online-judge-backend/worker-service') {
+                            sh """
+                                docker build \
+                                    -t ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG} \
+                                    -t ${DOCKERHUB_USERNAME}/worker-service:latest .
+                            """
+                        }
+                        withCredentials([usernamePassword(
+                            credentialsId: 'docker-hub-credential',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )]) {
+                            retry(3) {
+                                sh """
+                                    echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                                    docker push ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
+                                    docker push ${DOCKERHUB_USERNAME}/worker-service:latest
+                                    docker logout
+                                """
+                            }
+                        }
+                    }
+                }
+
+                stage('result-service') {
+                    when { expression { env.BUILD_RESULT == 'true' } }
+                    steps {
+                        dir('online_judge/online-judge-backend/result-service') {
+                            sh """
+                                docker build \
+                                    -t ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG} \
+                                    -t ${DOCKERHUB_USERNAME}/result-service:latest .
+                            """
+                        }
+                        withCredentials([usernamePassword(
+                            credentialsId: 'docker-hub-credential',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )]) {
+                            retry(3) {
+                                sh """
+                                    echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                                    docker push ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
+                                    docker push ${DOCKERHUB_USERNAME}/result-service:latest
+                                    docker logout
+                                """
+                            }
+                        }
+                    }
+                }
+
+                stage('api-gateway') {
+                    when { expression { env.BUILD_GATEWAY == 'true' } }
+                    steps {
+                        dir('online_judge/online-judge-backend/api-gateway') {
+                            sh """
+                                docker build \
+                                    -t ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG} \
+                                    -t ${DOCKERHUB_USERNAME}/api-gateway:latest .
+                            """
+                        }
+                        withCredentials([usernamePassword(
+                            credentialsId: 'docker-hub-credential',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )]) {
+                            retry(3) {
+                                sh """
+                                    echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                                    docker push ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
+                                    docker push ${DOCKERHUB_USERNAME}/api-gateway:latest
+                                    docker logout
+                                """
+                            }
+                        }
+                    }
+                }
+
+                stage('admin-service') {
+                    when { expression { env.BUILD_ADMIN == 'true' } }
+                    steps {
+                        dir('online_judge/online-judge-backend/admin-service') {
+                            sh """
+                                docker build \
+                                    -t ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG} \
+                                    -t ${DOCKERHUB_USERNAME}/admin-service:latest .
+                            """
+                        }
+                        withCredentials([usernamePassword(
+                            credentialsId: 'docker-hub-credential',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )]) {
+                            retry(3) {
+                                sh """
+                                    echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                                    docker push ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG}
+                                    docker push ${DOCKERHUB_USERNAME}/admin-service:latest
+                                    docker logout
+                                """
+                            }
+                        }
+                    }
+                }
+
+                stage('wecode-frontend') {
+                    when { expression { env.BUILD_FRONTEND == 'true' } }
+                    steps {
+                        dir('wecode-frontend') {
+                            sh """
+                                docker build \
+                                    -t ${DOCKERHUB_USERNAME}/wecode-frontend:${IMAGE_TAG} \
+                                    -t ${DOCKERHUB_USERNAME}/wecode-frontend:latest .
+                            """
+                        }
+                        withCredentials([usernamePassword(
+                            credentialsId: 'docker-hub-credential',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )]) {
+                            retry(3) {
+                                sh """
+                                    echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                                    docker push ${DOCKERHUB_USERNAME}/wecode-frontend:${IMAGE_TAG}
+                                    docker push ${DOCKERHUB_USERNAME}/wecode-frontend:latest
+                                    docker logout
+                                """
+                            }
                         }
                     }
                 }
             }
         }
 
-        stage('Ansible Deploy') {
+        stage('Deploy') {
             steps {
                 dir('online_judge/online-judge-backend/ansible') {
                     sh """
@@ -92,14 +232,17 @@ pipeline {
             }
         }
     }
+
     post {
         success {
             echo '✅ Pipeline completed successfully!'
+            echo "Images tagged: ${DOCKERHUB_USERNAME}/*:${IMAGE_TAG} and :latest"
         }
         failure {
             echo '❌ Pipeline failed!'
         }
         always {
+            sh 'docker system prune -f --filter "until=2h" || true'
             echo 'Pipeline finished.'
         }
     }
