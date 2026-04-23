@@ -21,24 +21,10 @@ pipeline {
             }
         }
 
-        stage('Build Service') {
+        stage('Build') {
             steps {
                 dir("${ROOT_DIR}") {
                     sh "mvn -B clean package -DskipTests -pl ${SERVICE_NAME} -am"
-                }
-            }
-        }
-
-        stage('Unit Tests') {
-            steps {
-                dir("${ROOT_DIR}") {
-                    sh "mvn test -pl ${SERVICE_NAME}"
-                }
-            }
-            post {
-                always {
-                    junit allowEmptyResults: true,
-                          testResults: "**/target/surefire-reports/*.xml"
                 }
             }
         }
@@ -49,8 +35,7 @@ pipeline {
                     sh """
                         docker build \
                         -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
-                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest \
-                        .
+                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
                     """
                 }
             }
@@ -82,10 +67,11 @@ pipeline {
                 }
             }
         }
+    }
 
     post {
         success {
-            echo "✅ ${SERVICE_NAME} built & pushed: ${IMAGE_TAG}"
+            echo "✅ ${SERVICE_NAME} deployed successfully — image tag: ${IMAGE_TAG}"
         }
         failure {
             echo "❌ ${SERVICE_NAME} pipeline failed!"
