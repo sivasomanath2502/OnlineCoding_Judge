@@ -98,12 +98,12 @@ services:
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
       - mysql
-    online-judge-frontend:
-      image: ${DOCKERHUB_USERNAME}/online-judge-frontend:${IMAGE_TAG}
-      container_name: online-judge-frontend
-      ports:
-        - "3000:80"
-      depends_on:
-        - api-gateway
+  online-judge-frontend:
+    image: ${DOCKERHUB_USERNAME}/online-judge-frontend:${IMAGE_TAG}
+    container_name: online-judge-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
 volumes:
   mysql_data:
