@@ -5,6 +5,7 @@ pipeline {
         DOCKERHUB_USERNAME = 'sivasomanath2502'
         SERVICE_NAME       = 'online-judge-frontend'
         IMAGE_TAG          = "${BUILD_NUMBER}"
+        FRONTEND_DIR       = 'online_judge/online-judge-frontend'
     }
 
     stages {
@@ -15,7 +16,7 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                dir('online-judge-frontend') {
+                dir("${FRONTEND_DIR}") {
                     sh 'npm ci'
                 }
             }
@@ -23,7 +24,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                dir('online-judge-frontend') {
+                dir("${FRONTEND_DIR}") {
                     sh 'npm run build'
                 }
             }
@@ -31,11 +32,13 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh """
-                    docker build \
-                    -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
-                    -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
-                """
+                dir("${FRONTEND_DIR}") {
+                    sh """
+                        docker build \
+                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
+                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
+                    """
+                }
             }
         }
 
@@ -66,9 +69,9 @@ pipeline {
             }
         }
     }
-}
-post {
-        success { echo "✅ Frontend deployed: ${SERVICE_NAME}:${IMAGE_TAG}" }
+
+    post {
+        success { echo "✅ Frontend built: ${SERVICE_NAME}:${IMAGE_TAG}" }
         failure { echo "❌ Frontend pipeline failed!" }
         always  { sh 'docker image prune -f || true' }
     }
