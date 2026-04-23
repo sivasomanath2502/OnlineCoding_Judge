@@ -48,14 +48,30 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh """
-                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
-                        docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG}
-                        docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest
-                        docker logout
-                    """
+
+                    retry(3) {
+                        sh """
+                            echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                            docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG}
+                        """
+                    }
+
+                    retry(3) {
+                        sh """
+                            echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                            docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest
+                        """
+                    }
+
+                    sh "docker logout || true"
                 }
             }
         }
+    }
+}
+post {
+        success { echo "✅ Frontend deployed: ${SERVICE_NAME}:${IMAGE_TAG}" }
+        failure { echo "❌ Frontend pipeline failed!" }
+        always  { sh 'docker image prune -f || true' }
     }
 }
