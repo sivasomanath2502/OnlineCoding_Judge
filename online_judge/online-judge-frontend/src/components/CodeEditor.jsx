@@ -1,7 +1,7 @@
 import Editor from '@monaco-editor/react'
 import { useTheme } from '../contexts/ThemeContext'
 
-export default function CodeEditor({ language, value, onChange }) {
+export default function CodeEditor({ language, value, onChange, fontSize = 14 }) {
   const { theme } = useTheme()
 
   return (
@@ -13,8 +13,8 @@ export default function CodeEditor({ language, value, onChange }) {
         onChange={v => onChange(v || '')}
         theme={theme === 'dark' ? 'vs-dark' : 'vs'}
         options={{
-          fontSize:              14,
-          fontFamily:            "'JetBrains Mono', 'Fira Code', monospace",
+          fontSize,
+          fontFamily:            "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
           fontLigatures:         true,
           minimap:               { enabled: false },
           scrollBeyondLastLine:  false,
@@ -27,6 +27,9 @@ export default function CodeEditor({ language, value, onChange }) {
           cursorStyle:           'line',
           smoothScrolling:       true,
           padding:               { top: 12, bottom: 12 },
+          bracketPairColorization: { enabled: true },
+          guides:                { bracketPairs: true },
+          suggest:               { preview: true },
         }}
       />
     </div>
