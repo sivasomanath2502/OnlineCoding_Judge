@@ -12,6 +12,12 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   rabbitmq:
     image: rabbitmq:3.12-management
@@ -19,11 +25,24 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   redis:
     image: redis:7
     container_name: online-judge-redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   submission-service:
     image: ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
     container_name: submission-service
@@ -36,8 +55,10 @@ services:
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      - mysql
-      - rabbitmq
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   worker-service:
     image: ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
@@ -57,8 +78,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/judge:/judge-tmp
     depends_on:
-      - mysql
-      - rabbitmq
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   result-service:
     image: ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
@@ -71,7 +94,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
   api-gateway:
     image: ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
@@ -83,9 +107,13 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      - submission-service
-      - result-service
-      - redis
+      redis:
+        condition: service_healthy
+      submission-service:
+        condition: service_started
+      result-service:
+        condition: service_started
+
   admin-service:
     image: ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG}
     container_name: admin-service
@@ -97,7 +125,9 @@ services:
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+
   online-judge-frontend:
     image: ${DOCKERHUB_USERNAME}/online-judge-frontend:${IMAGE_TAG}
     container_name: online-judge-frontend
@@ -105,5 +135,6 @@ services:
       - "3000:80"
     depends_on:
       - api-gateway
+
 volumes:
   mysql_data:
