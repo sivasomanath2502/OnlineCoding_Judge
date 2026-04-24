@@ -16,29 +16,35 @@ pipeline {
         stage('Detect Changes') {
             steps {
                 script {
-                    def changedFiles = sh(
-                        script: "git diff --name-only origin/main...HEAD || git diff --name-only HEAD~1 HEAD",
-                        returnStdout: true
-                    ).trim()
+                        def changedFiles = ''
+                        try {
+                            changedFiles = sh(
+                                script: "git diff --name-only origin/main...HEAD",
+                                returnStdout: true
+                            ).trim()
+                        } catch (e) {
+                            changedFiles = 'submission-service worker-service result-service api-gateway admin-service online-judge-frontend'
+                            echo "Could not detect changes, building all services"
+                        }
 
-                    echo "Changed files:\n${changedFiles}"
+                        echo "Changed files:\n${changedFiles}"
 
-                    env.BUILD_SUBMISSION = changedFiles.contains('submission-service') ? 'true' : 'false'
-                    env.BUILD_WORKER     = changedFiles.contains('worker-service')     ? 'true' : 'false'
-                    env.BUILD_RESULT     = changedFiles.contains('result-service')     ? 'true' : 'false'
-                    env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')        ? 'true' : 'false'
-                    env.BUILD_ADMIN      = changedFiles.contains('admin-service')      ? 'true' : 'false'
-                    env.BUILD_FRONTEND   = changedFiles.contains('online-judge-frontend')    ? 'true' : 'false'
+                        env.BUILD_SUBMISSION = changedFiles.contains('submission-service') ? 'true' : 'false'
+                        env.BUILD_WORKER     = changedFiles.contains('worker-service')     ? 'true' : 'false'
+                        env.BUILD_RESULT     = changedFiles.contains('result-service')     ? 'true' : 'false'
+                        env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')        ? 'true' : 'false'
+                        env.BUILD_ADMIN      = changedFiles.contains('admin-service')      ? 'true' : 'false'
+                        env.BUILD_FRONTEND   = changedFiles.contains('online-judge-frontend')    ? 'true' : 'false'
 
-                    echo """
-                    Build flags:
-                    submission-service : ${env.BUILD_SUBMISSION}
-                    worker-service     : ${env.BUILD_WORKER}
-                    result-service     : ${env.BUILD_RESULT}
-                    api-gateway        : ${env.BUILD_GATEWAY}
-                    admin-service      : ${env.BUILD_ADMIN}
-                    online-judge-frontend    : ${env.BUILD_FRONTEND}
-                    """
+                        echo """
+                        Build flags:
+                        submission-service : ${env.BUILD_SUBMISSION}
+                        worker-service     : ${env.BUILD_WORKER}
+                        result-service     : ${env.BUILD_RESULT}
+                        api-gateway        : ${env.BUILD_GATEWAY}
+                        admin-service      : ${env.BUILD_ADMIN}
+                        online-judge-frontend    : ${env.BUILD_FRONTEND}
+                        """
                 }
             }
         }
@@ -94,7 +100,8 @@ pipeline {
                     sh """
                         ansible-playbook playbooks/deploy-app.yml \
                             -e "image_tag=latest" \
-                            -e "dockerhub_username=${DOCKERHUB_USERNAME}"
+                            -e "dockerhub_username=${DOCKERHUB_USERNAME}" \
+                            -e "services_to_update=${env.SERVICES_CHANGED}"
                     """
                 }
             }
