@@ -66,10 +66,9 @@
 
     - name: Deploy application
       shell: |
-        export IMAGE_TAG={{ image_tag }}
-        export DOCKERHUB_USERNAME={{ dockerhub_username }}
-        docker compose -f docker-compose.prod.yml pull
-        docker compose -f docker-compose.prod.yml up -d --remove-orphans
+        docker-compose -f docker-compose.prod.yml down || true
+        IMAGE_TAG={{ image_tag }} DOCKERHUB_USERNAME={{ dockerhub_username }} \
+        docker-compose -f docker-compose.prod.yml up -d
       args:
         chdir: "{{ app_dir }}"
 
