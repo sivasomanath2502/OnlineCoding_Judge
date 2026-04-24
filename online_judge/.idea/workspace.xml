@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/ansible/playbooks/deploy-app.yml" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/ansible/playbooks/deploy-app.yml" afterDir="false" />
-    </list>
+    <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -40,54 +37,54 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.AdminServiceApplication.executor": "Run",
-    "Application.admin-service.executor": "Run",
-    "Application.api-gateway.executor": "Run",
-    "Application.local.executor": "Run",
-    "Application.result-service.executor": "Run",
-    "Application.submission-service.executor": "Run",
-    "Application.worker-service.executor": "Run",
-    "Maven. [clean,install,-DskipTests].executor": "Run",
-    "Maven. [clean,install,-X].executor": "Run",
-    "Maven. [clean,install,-pl,submission-service].executor": "Run",
-    "Maven. [clean,install,-pl,worker-service].executor": "Run",
-    "Maven. [clean,install].executor": "Run",
-    "Maven. [clean,package,-DskipTests].executor": "Run",
-    "Maven. [clean,package].executor": "Run",
-    "Maven. [test,-pl,submission-service].executor": "Run",
-    "Maven.online-judge [clean,install,-X].executor": "Run",
-    "Maven.online-judge [clean,install,-skipTest].executor": "Run",
-    "Maven.online-judge [clean,install].executor": "Run",
-    "Maven.online-judge [clean,package,-DskipTests].executor": "Run",
-    "Maven.online-judge [help:evaluate...].executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "Spring Boot.AdminServiceApplication.executor": "Run",
-    "Spring Boot.ApiGatewayApplication.executor": "Run",
-    "Spring Boot.ResultServiceApplication.executor": "Run",
-    "Spring Boot.SubmissionServiceApplication.executor": "Run",
-    "Spring Boot.WorkerServiceApplication.executor": "Run",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "onboarding.tips.debug.path": "/media/gsomanath/01DC966F669131C0/DevOps_Project/online_judge/online-judge-backend/src/main/java/com/onlinejudge/Main.java",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "preferences.lookFeel"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.AdminServiceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Application.admin-service.executor&quot;: &quot;Run&quot;,
+    &quot;Application.api-gateway.executor&quot;: &quot;Run&quot;,
+    &quot;Application.local.executor&quot;: &quot;Run&quot;,
+    &quot;Application.result-service.executor&quot;: &quot;Run&quot;,
+    &quot;Application.submission-service.executor&quot;: &quot;Run&quot;,
+    &quot;Application.worker-service.executor&quot;: &quot;Run&quot;,
+    &quot;Maven. [clean,install,-DskipTests].executor&quot;: &quot;Run&quot;,
+    &quot;Maven. [clean,install,-X].executor&quot;: &quot;Run&quot;,
+    &quot;Maven. [clean,install,-pl,submission-service].executor&quot;: &quot;Run&quot;,
+    &quot;Maven. [clean,install,-pl,worker-service].executor&quot;: &quot;Run&quot;,
+    &quot;Maven. [clean,install].executor&quot;: &quot;Run&quot;,
+    &quot;Maven. [clean,package,-DskipTests].executor&quot;: &quot;Run&quot;,
+    &quot;Maven. [clean,package].executor&quot;: &quot;Run&quot;,
+    &quot;Maven. [test,-pl,submission-service].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.online-judge [clean,install,-X].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.online-judge [clean,install,-skipTest].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.online-judge [clean,install].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.online-judge [clean,package,-DskipTests].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.online-judge [help:evaluate...].executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;Spring Boot.AdminServiceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.ApiGatewayApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.ResultServiceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.SubmissionServiceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.WorkerServiceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;/media/gsomanath/01DC966F669131C0/DevOps_Project/online_judge/online-judge-backend/src/main/java/com/onlinejudge/Main.java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/online-judge-backend" />

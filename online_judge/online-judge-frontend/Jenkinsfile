@@ -69,7 +69,6 @@ pipeline {
             }
         }
     }
-
     post {
         success { echo "✅ Frontend built: ${SERVICE_NAME}:${IMAGE_TAG}" }
         failure { echo "❌ Frontend pipeline failed!" }
