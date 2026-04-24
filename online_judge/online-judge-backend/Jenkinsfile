@@ -12,7 +12,6 @@ pipeline {
                 checkout scm
             }
         }
-
         stage('Detect Changes') {
             steps {
                 script {
@@ -107,7 +106,6 @@ pipeline {
             }
         }
     }
-
     post {
         success {
             echo '✅ Root pipeline completed successfully!'

@@ -1,7 +1,6 @@
 import axios from 'axios'
 
 // Direct gateway URL — frontend calls gateway directly from browser
-// Change this IP to your server's actual IP
 const GATEWAY = 'http://100.128.165.74:8090'  // ← replace with your actual IP
 
 export const api = axios.create({
