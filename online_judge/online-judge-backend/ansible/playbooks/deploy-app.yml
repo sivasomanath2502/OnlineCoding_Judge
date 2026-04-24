@@ -65,10 +65,11 @@
         force_source: yes
 
     - name: Deploy application
+      environment:
+        IMAGE_TAG: "{{ image_tag }}"
+        DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
       shell: |
-        docker-compose -f docker-compose.prod.yml down || true
-        IMAGE_TAG={{ image_tag }} DOCKERHUB_USERNAME={{ dockerhub_username }} \
-        docker-compose -f docker-compose.prod.yml up -d
+        docker-compose -f docker-compose.prod.yml up -d --remove-orphans
       args:
         chdir: "{{ app_dir }}"
 
