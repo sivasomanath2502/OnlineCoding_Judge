@@ -1,9 +1,8 @@
 import axios from 'axios'
 
-// Always use relative URLs — nginx proxies /submissions/, /results/, /admin/, /worker/
-// to api-gateway:8090 in both Docker and local dev (when using nginx locally)
-// For local dev WITHOUT Docker, set VITE_API_URL=http://localhost:8090 in .env.local
-const GATEWAY = import.meta.env.VITE_API_URL || ''
+// Direct gateway URL — frontend calls gateway directly from browser
+// Change this IP to your server's actual IP
+const GATEWAY = 'http://100.128.165.74:8090'  // ← replace with your actual IP
 
 export const api = axios.create({
   baseURL: GATEWAY,
@@ -26,10 +25,4 @@ export const submitCode = (data) => api.post('/submissions', data)
 export const getResult  = (id)   => api.get(`/results/${id}`)
 
 // ─── SSE stream URL ───────────────────────────────────────────────
-// EventSource needs absolute URL — derive from current window origin
-// In Docker: window.location.origin = http://your-server-ip:3000
-// nginx then proxies /results/... to api-gateway
-export const getStreamUrl = (id) => {
-  const origin = import.meta.env.VITE_API_URL || window.location.origin
-  return `${origin}/results/${id}/stream`
-}
+export const getStreamUrl = (id) => `${GATEWAY}/results/${id}/stream`
