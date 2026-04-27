@@ -1,0 +1,49 @@
+---
+- name: Deploy single service
+  hosts: app_servers
+  become: yes
+
+  vars:
+    dockerhub_username: "sivasomanath2502"
+    image_tag: "latest"
+    service_name: ""
+
+  tasks:
+
+    - name: Validate service_name is provided
+      fail:
+        msg: "service_name must be provided"
+      when: service_name == ""
+
+    - name: Pull latest image for {{ service_name }}
+      community.docker.docker_image:
+        name: "{{ dockerhub_username }}/{{ service_name }}"
+        tag: "{{ image_tag }}"
+        source: pull
+        force_source: yes
+
+    - name: Restart container for {{ service_name }}
+      community.docker.docker_container:
+        name: "{{ service_name }}"
+        image: "{{ dockerhub_username }}/{{ service_name }}:{{ image_tag }}"
+        state: started
+        restart: yes
+
+    - name: Wait for service to be healthy
+      wait_for:
+        host: localhost
+        port: "{{ service_ports[service_name] }}"
+        delay: 5
+        timeout: 60
+      vars:
+        service_ports:
+          submission-service: 8081
+          worker-service:     8082
+          result-service:     8083
+          api-gateway:        8090
+          admin-service:      8084
+          wecode-frontend:    3000
+
+    - name: Service {{ service_name }} is running
+      debug:
+        msg: "✅ {{ service_name }}:{{ image_tag }} is healthy"
