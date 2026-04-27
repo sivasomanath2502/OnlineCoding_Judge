@@ -135,8 +135,8 @@ services:
         condition: service_healthy
 
   online-judge-frontend:
-    image: ${DOCKERHUB_USERNAME}/wecode-frontend:${IMAGE_TAG}
-    container_name: wecode-frontend
+    image: ${DOCKERHUB_USERNAME}/online-judeg-frontend:${IMAGE_TAG}
+    container_name: online-judge-frontend
     ports:
       - "3000:80"
     environment:
