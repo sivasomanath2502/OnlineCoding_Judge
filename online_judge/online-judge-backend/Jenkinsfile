@@ -12,30 +12,46 @@ pipeline {
                 checkout scm
             }
         }
+
         stage('Detect Changes') {
             steps {
                 script {
                     def changedFiles = ''
                     try {
-                        // Compare current commit to previous commit
                         changedFiles = sh(
                             script: "git diff --name-only HEAD~1 HEAD",
                             returnStdout: true
                         ).trim()
+
+                        if (changedFiles.isEmpty()) {
+                            echo "No changed files detected, falling back to build all"
+                            changedFiles = 'submission-service worker-service result-service api-gateway admin-service online-judge-frontend'
+                        }
+
                     } catch (e) {
-                        // First commit or shallow clone — build all
+                        echo "git diff failed (first commit or shallow clone), building all services"
                         changedFiles = 'submission-service worker-service result-service api-gateway admin-service online-judge-frontend'
-                        echo "Could not detect changes, building all"
                     }
 
                     echo "Changed files:\n${changedFiles}"
 
-                    env.BUILD_SUBMISSION = changedFiles.contains('submission-service')      ? 'true' : 'false'
-                    env.BUILD_WORKER     = changedFiles.contains('worker-service')          ? 'true' : 'false'
-                    env.BUILD_RESULT     = changedFiles.contains('result-service')          ? 'true' : 'false'
-                    env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')             ? 'true' : 'false'
-                    env.BUILD_ADMIN      = changedFiles.contains('admin-service')           ? 'true' : 'false'
-                    env.BUILD_FRONTEND   = changedFiles.contains('online-judge-frontend')   ? 'true' : 'false'
+                    env.BUILD_SUBMISSION = changedFiles.contains('submission-service')    ? 'true' : 'false'
+                    env.BUILD_WORKER     = changedFiles.contains('worker-service')        ? 'true' : 'false'
+                    env.BUILD_RESULT     = changedFiles.contains('result-service')        ? 'true' : 'false'
+                    env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')           ? 'true' : 'false'
+                    env.BUILD_ADMIN      = changedFiles.contains('admin-service')         ? 'true' : 'false'
+                    env.BUILD_FRONTEND   = changedFiles.contains('online-judge-frontend') ? 'true' : 'false'
+
+                    echo """
+                    ============ Build Flags ============
+                      submission-service   : ${env.BUILD_SUBMISSION}
+                      worker-service       : ${env.BUILD_WORKER}
+                      result-service       : ${env.BUILD_RESULT}
+                      api-gateway          : ${env.BUILD_GATEWAY}
+                      admin-service        : ${env.BUILD_ADMIN}
+                      online-judge-frontend: ${env.BUILD_FRONTEND}
+                    =====================================
+                    """
                 }
             }
         }
@@ -43,49 +59,70 @@ pipeline {
         stage('Trigger Service Pipelines') {
             steps {
                 script {
-                    parallel (
+                    def parallelJobs = [:]
 
-                        submission: {
-                            if (env.BUILD_SUBMISSION == 'true') {
-                                build job: 'submission-service', wait: true
-                            }
-                        },
-
-                        worker: {
-                            if (env.BUILD_WORKER == 'true') {
-                                build job: 'worker-service', wait: true
-                            }
-                        },
-
-                        result: {
-                            if (env.BUILD_RESULT == 'true') {
-                                build job: 'result-service', wait: true
-                            }
-                        },
-
-                        gateway: {
-                            if (env.BUILD_GATEWAY == 'true') {
-                                build job: 'api-gateway', wait: true
-                            }
-                        },
-
-                        admin: {
-                            if (env.BUILD_ADMIN == 'true') {
-                                build job: 'admin-service', wait: true
-                            }
-                        },
-
-                        frontend: {
-                            if (env.BUILD_FRONTEND == 'true') {
-                                build job: 'online-judge-frontend', wait: true
-                            }
+                    if (env.BUILD_SUBMISSION == 'true') {
+                        parallelJobs['submission-service'] = {
+                            echo "Triggering submission-service pipeline..."
+                            build job: 'submission-service', wait: true, propagate: true
                         }
-                    )
+                    }
+
+                    if (env.BUILD_WORKER == 'true') {
+                        parallelJobs['worker-service'] = {
+                            echo "Triggering worker-service pipeline..."
+                            build job: 'worker-service', wait: true, propagate: true
+                        }
+                    }
+
+                    if (env.BUILD_RESULT == 'true') {
+                        parallelJobs['result-service'] = {
+                            echo "Triggering result-service pipeline..."
+                            build job: 'result-service', wait: true, propagate: true
+                        }
+                    }
+
+                    if (env.BUILD_GATEWAY == 'true') {
+                        parallelJobs['api-gateway'] = {
+                            echo "Triggering api-gateway pipeline..."
+                            build job: 'api-gateway', wait: true, propagate: true
+                        }
+                    }
+
+                    if (env.BUILD_ADMIN == 'true') {
+                        parallelJobs['admin-service'] = {
+                            echo "Triggering admin-service pipeline..."
+                            build job: 'admin-service', wait: true, propagate: true
+                        }
+                    }
+
+                    if (env.BUILD_FRONTEND == 'true') {
+                        parallelJobs['online-judge-frontend'] = {
+                            echo "Triggering online-judge-frontend pipeline..."
+                            build job: 'online-judge-frontend', wait: true, propagate: true
+                        }
+                    }
+
+                    if (parallelJobs.isEmpty()) {
+                        echo "No services changed — skipping all builds."
+                    } else {
+                        parallel parallelJobs
+                    }
                 }
             }
         }
 
         stage('Deploy') {
+            when {
+                anyOf {
+                    environment name: 'BUILD_SUBMISSION', value: 'true'
+                    environment name: 'BUILD_WORKER',     value: 'true'
+                    environment name: 'BUILD_RESULT',     value: 'true'
+                    environment name: 'BUILD_GATEWAY',    value: 'true'
+                    environment name: 'BUILD_ADMIN',      value: 'true'
+                    environment name: 'BUILD_FRONTEND',   value: 'true'
+                }
+            }
             steps {
                 dir('online_judge/online-judge-backend/ansible') {
                     sh """
@@ -97,6 +134,7 @@ pipeline {
             }
         }
     }
+
     post {
         success {
             echo '✅ Root pipeline completed successfully!'

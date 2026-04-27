@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const GATEWAY = 'http://api-gateway:8090'
+const GATEWAY = 'http://localhost:8090'
 
 export const api = axios.create({
   baseURL: GATEWAY,
