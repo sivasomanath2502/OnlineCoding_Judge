@@ -14,7 +14,7 @@
       result-service:     8083
       api-gateway:        8090
       admin-service:      8084
-      online-judege-frontend:    3000
+      online-judge-frontend: 3000
 
     db_services:
       - submission-service
@@ -42,11 +42,12 @@
         state: started
         restart: yes
 
-        # expose port to host
         ports:
           - "{{ service_ports[service_name] }}:{{ service_ports[service_name] }}"
 
-        # environment variables
+        networks:
+          - name: online-judge-network
+
         env: >-
           {{
             {
@@ -65,12 +66,21 @@
               )
             )
           }}
-    - name: Wait for service to be healthy
+
+    - name: Wait for backend service to be healthy
       uri:
         url: "http://localhost:{{ service_ports[service_name] }}/actuator/health"
         status_code: 200
         timeout: 60
+      when: service_name != "online-judge-frontend"
+
+    - name: Wait for frontend to be healthy
+      uri:
+        url: "http://localhost:{{ service_ports[service_name] }}"
+        status_code: 200
+        timeout: 60
+      when: service_name == "online-judge-frontend"
 
     - name: Service {{ service_name }} is running
       debug:
-        msg: "{{ service_name }}:{{ image_tag }} is healthy"
+        msg: "✅ {{ service_name }}:{{ image_tag }} is healthy"
