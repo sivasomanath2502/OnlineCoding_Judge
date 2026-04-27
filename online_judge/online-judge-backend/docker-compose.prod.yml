@@ -135,12 +135,13 @@ services:
         condition: service_healthy
 
   online-judge-frontend:
-    image: ${DOCKERHUB_USERNAME}/online-judge-frontend:${IMAGE_TAG}
-    container_name: online-judge-frontend
+    image: ${DOCKERHUB_USERNAME}/wecode-frontend:${IMAGE_TAG}
+    container_name: wecode-frontend
     ports:
       - "3000:80"
+    environment:
+      NGINX_HOST: localhost
     depends_on:
       - api-gateway
-
 volumes:
   mysql_data:
