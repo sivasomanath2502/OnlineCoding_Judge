@@ -8,6 +8,19 @@
     image_tag: "latest"
     service_name: ""
 
+    service_ports:
+      submission-service: 8081
+      worker-service:     8082
+      result-service:     8083
+      api-gateway:        8090
+      admin-service:      8084
+      online-judege-frontend:    3000
+
+    db_services:
+      - submission-service
+      - result-service
+      - admin-service
+
   tasks:
 
     - name: Validate service_name is provided
@@ -29,21 +42,32 @@
         state: started
         restart: yes
 
+        # expose port to host
+        ports:
+          - "{{ service_ports[service_name] }}:{{ service_ports[service_name] }}"
+
+        # environment variables
+        env: >-
+          {{
+            {
+              'SPRING_PROFILES_ACTIVE': 'docker'
+            }
+            |
+            combine(
+              service_name in db_services
+              | ternary({
+                  'SPRING_DATASOURCE_URL': 'jdbc:mysql://mysql:3306/onlinejudge',
+                  'SPRING_DATASOURCE_USERNAME': 'root',
+                  'SPRING_DATASOURCE_PASSWORD': 'root'
+                }, {})
+            )
+          }}
     - name: Wait for service to be healthy
-      wait_for:
-        host: localhost
-        port: "{{ service_ports[service_name] }}"
-        delay: 5
+      uri:
+        url: "http://localhost:{{ service_ports[service_name] }}/actuator/health"
+        status_code: 200
         timeout: 60
-      vars:
-        service_ports:
-          submission-service: 8081
-          worker-service:     8082
-          result-service:     8083
-          api-gateway:        8090
-          admin-service:      8084
-          wecode-frontend:    3000
 
     - name: Service {{ service_name }} is running
       debug:
-        msg: "✅ {{ service_name }}:{{ image_tag }} is healthy"
+        msg: "{{ service_name }}:{{ image_tag }} is healthy"
