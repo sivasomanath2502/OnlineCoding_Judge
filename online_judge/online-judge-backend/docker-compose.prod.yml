@@ -74,6 +74,12 @@ services:
       EXECUTION_HOST_TEMP_DIR: /tmp/judge
       RESULT_SERVICE_URL: http://result-service:8083
       SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/judge:/judge-tmp

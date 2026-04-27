@@ -6,6 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/docker-compose.prod.yml" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/docker-compose.prod.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/src/main/resources/application-docker.properties" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/result-service/src/main/resources/application-docker.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/worker-service/src/main/java/com/onlinejudge/worker_service/repository/ProblemRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/worker-service/src/main/java/com/onlinejudge/worker_service/repository/ProblemRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-frontend/src/api/client.js" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-frontend/src/api/client.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,6 +60,7 @@
     &quot;Maven. [clean,install].executor&quot;: &quot;Run&quot;,
     &quot;Maven. [clean,package,-DskipTests].executor&quot;: &quot;Run&quot;,
     &quot;Maven. [clean,package].executor&quot;: &quot;Run&quot;,
+    &quot;Maven. [spring-boot:run...].executor&quot;: &quot;Run&quot;,
     &quot;Maven. [test,-pl,submission-service].executor&quot;: &quot;Run&quot;,
     &quot;Maven.online-judge [clean,install,-X].executor&quot;: &quot;Run&quot;,
     &quot;Maven.online-judge [clean,install,-skipTest].executor&quot;: &quot;Run&quot;,
@@ -104,9 +110,10 @@
       <command value="mvn clean package" />
       <command value="mvn clean install -pl worker-service" />
       <command value="mvn clean package -DskipTests" />
+      <command value="mvn spring-boot:run -Dspring-boot.run.profiles=local" />
     </option>
   </component>
-  <component name="RunManager" selected="Application.api-gateway">
+  <component name="RunManager" selected="Application.admin-service">
     <configuration name="admin-service" type="Application" factoryName="Application" folderName="Local_Config">
       <envs>
         <env name="SPRING_PROFILES_ACTIVE" value="local" />
