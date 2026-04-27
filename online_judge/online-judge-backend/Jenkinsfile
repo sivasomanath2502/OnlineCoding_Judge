@@ -113,24 +113,12 @@ pipeline {
         }
 
         stage('Deploy') {
-            when {
-                anyOf {
-                    environment name: 'BUILD_SUBMISSION', value: 'true'
-                    environment name: 'BUILD_WORKER',     value: 'true'
-                    environment name: 'BUILD_RESULT',     value: 'true'
-                    environment name: 'BUILD_GATEWAY',    value: 'true'
-                    environment name: 'BUILD_ADMIN',      value: 'true'
-                    environment name: 'BUILD_FRONTEND',   value: 'true'
-                }
-            }
-            steps {
-                dir('online_judge/online-judge-backend/ansible') {
-                    sh """
-                        ansible-playbook playbooks/deploy-app.yml \
-                            -e "image_tag=latest" \
-                            -e "dockerhub_username=${DOCKERHUB_USERNAME}"
-                    """
-                }
+            dir('online_judge/online-judge-backend/ansible') {
+                sh """
+                    ansible-playbook playbooks/deploy-app.yml \
+                        -e "image_tag=latest" \
+                        -e "dockerhub_username=${DOCKERHUB_USERNAME}"
+                """
             }
         }
     }

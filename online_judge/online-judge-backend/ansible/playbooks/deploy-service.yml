@@ -28,6 +28,11 @@
         msg: "service_name must be provided"
       when: service_name == ""
 
+    - name: Ensure Docker network exists
+      community.docker.docker_network:
+        name: online-judge-network
+        state: present
+
     - name: Pull latest image for {{ service_name }}
       community.docker.docker_image:
         name: "{{ dockerhub_username }}/{{ service_name }}"
@@ -41,13 +46,10 @@
         image: "{{ dockerhub_username }}/{{ service_name }}:{{ image_tag }}"
         state: started
         restart: yes
-
         ports:
           - "{{ service_ports[service_name] }}:{{ service_ports[service_name] }}"
-
         networks:
           - name: online-judge-network
-
         env: >-
           {{
             {
@@ -83,4 +85,4 @@
 
     - name: Service {{ service_name }} is running
       debug:
-        msg: "✅ {{ service_name }}:{{ image_tag }} is healthy"
+        msg: "{{ service_name }}:{{ image_tag }} is healthy"
