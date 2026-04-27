@@ -70,7 +70,7 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                dir("${ROOT_DIR}/ansible") {
+                dir("online_judge/online-judge-backend/ansible/") {
                     sh """
                         ansible-playbook playbooks/deploy-service.yml \
                             -e "service_name=${SERVICE_NAME}" \

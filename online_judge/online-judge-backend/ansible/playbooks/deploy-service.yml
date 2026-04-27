@@ -54,12 +54,15 @@
             }
             |
             combine(
-              service_name in db_services
-              | ternary({
-                  'SPRING_DATASOURCE_URL': 'jdbc:mysql://mysql:3306/onlinejudge',
-                  'SPRING_DATASOURCE_USERNAME': 'root',
-                  'SPRING_DATASOURCE_PASSWORD': 'root'
-                }, {})
+              (service_name in db_services)
+              | ternary(
+                  {
+                    'SPRING_DATASOURCE_URL': 'jdbc:mysql://mysql:3306/onlinejudge',
+                    'SPRING_DATASOURCE_USERNAME': 'root',
+                    'SPRING_DATASOURCE_PASSWORD': 'root'
+                  },
+                  {}
+              )
             )
           }}
     - name: Wait for service to be healthy
