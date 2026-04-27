@@ -41,17 +41,6 @@ pipeline {
                     env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')           ? 'true' : 'false'
                     env.BUILD_ADMIN      = changedFiles.contains('admin-service')         ? 'true' : 'false'
                     env.BUILD_FRONTEND   = changedFiles.contains('online-judge-frontend') ? 'true' : 'false'
-
-                    echo """
-                    ============ Build Flags ============
-                      submission-service   : ${env.BUILD_SUBMISSION}
-                      worker-service       : ${env.BUILD_WORKER}
-                      result-service       : ${env.BUILD_RESULT}
-                      api-gateway          : ${env.BUILD_GATEWAY}
-                      admin-service        : ${env.BUILD_ADMIN}
-                      online-judge-frontend: ${env.BUILD_FRONTEND}
-                    =====================================
-                    """
                 }
             }
         }
@@ -63,76 +52,71 @@ pipeline {
 
                     if (env.BUILD_SUBMISSION == 'true') {
                         parallelJobs['submission-service'] = {
-                            echo "Triggering submission-service pipeline..."
                             build job: 'submission-service', wait: true, propagate: true
                         }
                     }
 
                     if (env.BUILD_WORKER == 'true') {
                         parallelJobs['worker-service'] = {
-                            echo "Triggering worker-service pipeline..."
                             build job: 'worker-service', wait: true, propagate: true
                         }
                     }
 
                     if (env.BUILD_RESULT == 'true') {
                         parallelJobs['result-service'] = {
-                            echo "Triggering result-service pipeline..."
                             build job: 'result-service', wait: true, propagate: true
                         }
                     }
 
                     if (env.BUILD_GATEWAY == 'true') {
                         parallelJobs['api-gateway'] = {
-                            echo "Triggering api-gateway pipeline..."
                             build job: 'api-gateway', wait: true, propagate: true
                         }
                     }
 
                     if (env.BUILD_ADMIN == 'true') {
                         parallelJobs['admin-service'] = {
-                            echo "Triggering admin-service pipeline..."
                             build job: 'admin-service', wait: true, propagate: true
                         }
                     }
 
                     if (env.BUILD_FRONTEND == 'true') {
                         parallelJobs['online-judge-frontend'] = {
-                            echo "Triggering online-judge-frontend pipeline..."
                             build job: 'online-judge-frontend', wait: true, propagate: true
                         }
                     }
 
-                    if (parallelJobs.isEmpty()) {
-                        echo "No services changed — skipping all builds."
-                    } else {
+                    if (!parallelJobs.isEmpty()) {
                         parallel parallelJobs
+                    } else {
+                        echo "No services changed — skipping all builds."
                     }
                 }
             }
         }
 
         stage('Deploy') {
-            dir('online_judge/online-judge-backend/ansible') {
-                sh """
-                    ansible-playbook playbooks/deploy-app.yml \
+            steps {
+                dir('online_judge/online-judge-backend/ansible') {
+                    sh """
+                        ansible-playbook playbooks/deploy-app.yml \
                         -e "image_tag=latest" \
                         -e "dockerhub_username=${DOCKERHUB_USERNAME}"
-                """
+                    """
+                }
             }
         }
     }
 
     post {
         success {
-            echo '✅ Root pipeline completed successfully!'
+            echo 'Root pipeline completed successfully!'
         }
         failure {
-            echo '❌ Root pipeline failed!'
+            echo 'Root pipeline failed!'
         }
         always {
             sh 'docker system prune -f --filter "until=2h" || true'
-            echo 'Pipeline finished.'
         }
     }
 }
