@@ -113,35 +113,15 @@
             }}
         networks:
           - name: online-judge-network
-        env: >-
-          {{
-            {
-              'SPRING_PROFILES_ACTIVE': 'docker'
-            }
-            |
-            combine(
-              (service_name in db_services)
-              | ternary(
-                  {
-                    'SPRING_DATASOURCE_URL': 'jdbc:mysql://mysql:3306/online_judge',
-                    'SPRING_DATASOURCE_USERNAME': 'root',
-                    'SPRING_DATASOURCE_PASSWORD': 'root'
-                  },
-                  {}
-              )
-            )
-            |
-            combine(
-              service_name == "api-gateway"
-              | ternary(
-                  {
-                    'SPRING_DATA_REDIS_HOST': 'redis',
-                    'SPRING_DATA_REDIS_PORT': '6379'
-                  },
-                  {}
-              )
-            )
-          }}
+        env:
+          SPRING_PROFILES_ACTIVE: docker
+
+          SPRING_DATASOURCE_URL: "{{ 'jdbc:mysql://mysql:3306/online_judge' if service_name in db_services else omit }}"
+          SPRING_DATASOURCE_USERNAME: "{{ 'root' if service_name in db_services else omit }}"
+          SPRING_DATASOURCE_PASSWORD: "{{ 'root' if service_name in db_services else omit }}"
+
+          SPRING_DATA_REDIS_HOST: "{{ 'redis' if service_name == 'api-gateway' else omit }}"
+          SPRING_DATA_REDIS_PORT: "{{ '6379' if service_name == 'api-gateway' else omit }}"
 
     # ---------------- DEPENDENCY WAIT ----------------
 
