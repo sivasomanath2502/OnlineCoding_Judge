@@ -11,18 +11,9 @@ export default defineConfig(({ mode }) => {
       // Proxy is only used during dev server — routes /api calls to gateway
       // This avoids CORS issues in local dev
       proxy: {
-        '/submissions': {
-          target: env.VITE_GATEWAY_URL || 'http://localhost:8090',
-          changeOrigin: true,
-        },
-        '/results': {
-          target: env.VITE_GATEWAY_URL || 'http://localhost:8090',
-          changeOrigin: true,
-        },
-        '/admin': {
-          target: env.VITE_GATEWAY_URL || 'http://localhost:8090',
-          changeOrigin: true,
-        },
+        '/submissions': { target: 'http://localhost:8090', changeOrigin: true },
+        '/results':     { target: 'http://localhost:8090', changeOrigin: true },
+        '/admin':       { target: 'http://localhost:8090', changeOrigin: true },
       },
     },
     define: {

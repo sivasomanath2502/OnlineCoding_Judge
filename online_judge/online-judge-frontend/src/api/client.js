@@ -5,7 +5,7 @@ import axios from 'axios'
 // In dev: reads from .env.local (VITE_ prefix required by Vite)
 // In Docker build: reads from .env.docker passed at build time
 // Falls back to localhost:8090 if not set
-const GATEWAY = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:8090'
+const GATEWAY = ''
 
 export const api = axios.create({
   baseURL: GATEWAY,
