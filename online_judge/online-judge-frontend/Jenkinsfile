@@ -35,10 +35,8 @@ pipeline {
                 dir("${FRONTEND_DIR}") {
                     sh """
                         docker build \
-                            --build-arg VITE_GATEWAY_URL=http://localhost:8090 \
-                            -t ${DOCKERHUB_USERNAME}/online-judge-frontend:${IMAGE_TAG} \
-                            -t ${DOCKERHUB_USERNAME}/online-judge-frontend:latest \
-                            .
+                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
+                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
                     """
                 }
             }

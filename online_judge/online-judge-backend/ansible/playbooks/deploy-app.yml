@@ -1,79 +1,46 @@
 ---
-- name: Deploy Online Judge Application
+- name: Deploy full Online Judge stack
   hosts: app_servers
   become: yes
 
   vars:
     dockerhub_username: "sivasomanath2502"
-    image_tag: "{{ image_tag | default('latest') }}"
+    image_tag: "latest"
     app_dir: "/opt/online-judge"
 
   tasks:
 
-    - name: Create application directory
+    - name: Ensure app directory exists
       file:
         path: "{{ app_dir }}"
         state: directory
         mode: '0755'
 
-    - name: Copy docker-compose file
+    - name: Copy docker-compose file to server
       copy:
         src: "../../docker-compose.prod.yml"
         dest: "{{ app_dir }}/docker-compose.prod.yml"
         mode: '0644'
 
-    - name: Pull latest submission-service image
-      community.docker.docker_image:
-        name: "{{ dockerhub_username }}/submission-service"
-        tag: "{{ image_tag }}"
-        source: pull
-        force_source: yes
-
-    - name: Pull latest worker-service image
-      community.docker.docker_image:
-        name: "{{ dockerhub_username }}/worker-service"
-        tag: "{{ image_tag }}"
-        source: pull
-        force_source: yes
-
-    - name: Pull latest result-service image
-      community.docker.docker_image:
-        name: "{{ dockerhub_username }}/result-service"
-        tag: "{{ image_tag }}"
-        source: pull
-        force_source: yes
-
-    - name: Pull latest api-gateway image
-      community.docker.docker_image:
-        name: "{{ dockerhub_username }}/api-gateway"
-        tag: "{{ image_tag }}"
-        source: pull
-        force_source: yes
-
-    - name: Pull latest admin-service image
-      community.docker.docker_image:
-        name: "{{ dockerhub_username }}/admin-service"
-        tag: "{{ image_tag }}"
-        source: pull
-        force_source: yes
-
-    - name: Pull latest frontend image
-      community.docker.docker_image:
-        name: "{{ dockerhub_username }}/online-judge-frontend"
-        tag: "{{ image_tag }}"
-        source: pull
-        force_source: yes
-
-    - name: Deploy application
+    - name: Pull latest images for all services
+      shell: |
+        docker-compose -f docker-compose.prod.yml pull
+      args:
+        chdir: "{{ app_dir }}"
       environment:
         IMAGE_TAG: "{{ image_tag }}"
         DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
+
+    - name: Bring up full stack
       shell: |
         docker-compose -f docker-compose.prod.yml up -d --remove-orphans
       args:
         chdir: "{{ app_dir }}"
+      environment:
+        IMAGE_TAG: "{{ image_tag }}"
+        DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
 
-    - name: Wait for API Gateway port to be ready
+    - name: Wait for API Gateway to be ready
       wait_for:
         host: localhost
         port: 8090
@@ -91,4 +58,4 @@
 
     - name: Show health status
       debug:
-        msg: "Application is UP — {{ health_check.json.status }}"
+        msg: "Full stack is UP — {{ health_check.json.status }}"

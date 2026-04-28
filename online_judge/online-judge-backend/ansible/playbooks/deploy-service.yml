@@ -1,5 +1,5 @@
 ---
-- name: Deploy single service (with orchestration)
+- name: Deploy single service
   hosts: app_servers
   become: yes
 
@@ -7,116 +7,59 @@
     dockerhub_username: "sivasomanath2502"
     image_tag: "latest"
     service_name: ""
-
+    app_dir: "/opt/online-judge"
     service_ports:
-      submission-service: 8081
-      worker-service:     8082
-      result-service:     8083
-      api-gateway:        8090
-      admin-service:      8084
+      submission-service:    8081
+      worker-service:        8082
+      result-service:        8083
+      api-gateway:           8090
+      admin-service:         8084
       online-judge-frontend: 3000
-
-    db_services:
-      - submission-service
-      - result-service
-      - admin-service
 
   tasks:
 
     - name: Validate service_name
       fail:
-        msg: "service_name must be provided"
+        msg: "service_name must be provided via -e service_name=<name>"
       when: service_name == ""
 
-    - name: Ensure Docker network exists
-      community.docker.docker_network:
-        name: online-judge-network
-        state: present
-
-    # -------- INFRA SAFETY --------
-
-    - name: Ensure MySQL is reachable
-      wait_for:
-        host: localhost
-        port: 3306
-        timeout: 30
-      when: service_name in db_services
-
-    - name: Ensure Redis is reachable
-      wait_for:
-        host: localhost
-        port: 6379
-        timeout: 30
-      when: service_name == "api-gateway"
-
-    # -------- SERVICE --------
-
-    - name: Pull image
+    - name: Pull latest image for {{ service_name }}
       community.docker.docker_image:
         name: "{{ dockerhub_username }}/{{ service_name }}"
         tag: "{{ image_tag }}"
         source: pull
         force_source: yes
 
-    - name: Start service container
-      community.docker.docker_container:
-        name: "{{ service_name }}"
-        image: "{{ dockerhub_username }}/{{ service_name }}:{{ image_tag }}"
-        state: started
-        restart: yes
-        ports:
-          - "{{ '3000:80' if service_name == 'online-judge-frontend'
-               else service_ports[service_name] ~ ':' ~ service_ports[service_name] }}"
-        networks:
-          - name: online-judge-network
-        env:
-          SPRING_PROFILES_ACTIVE: docker
+    # Uses --no-deps so only THIS container restarts, not its dependencies
+    - name: Restart {{ service_name }} via docker-compose
+      shell: |
+        docker-compose -f docker-compose.prod.yml up -d --no-deps {{ service_name }}
+      args:
+        chdir: "{{ app_dir }}"
+      environment:
+        IMAGE_TAG: "{{ image_tag }}"
+        DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
 
-          SPRING_DATASOURCE_URL: "{{ 'jdbc:mysql://mysql:3306/online_judge' if service_name in db_services else omit }}"
-          SPRING_DATASOURCE_USERNAME: "{{ 'root' if service_name in db_services else omit }}"
-          SPRING_DATASOURCE_PASSWORD: "{{ 'root' if service_name in db_services else omit }}"
-
-          SPRING_DATA_REDIS_HOST: "{{ 'redis' if service_name == 'api-gateway' else omit }}"
-          SPRING_DATA_REDIS_PORT: "{{ '6379' if service_name == 'api-gateway' else omit }}"
-
-    # -------- DEPENDENCY WAIT --------
-
-    - name: Wait for API Gateway before frontend
-      uri:
-        url: "http://localhost:8090/actuator/health"
-        return_content: yes
-        timeout: 10
-      register: gateway_health
-      retries: 15
-      delay: 5
-      until: >
-        gateway_health.status == 200 and
-        (gateway_health.json is defined) and
-        (gateway_health.json.status == "UP")
-      when: service_name == "online-judge-frontend"
-
-    # -------- HEALTH CHECK --------
-
-    - name: Wait for backend service (basic health)
+    - name: Wait for {{ service_name }} to be healthy
       uri:
         url: "http://localhost:{{ service_ports[service_name] }}/actuator/health"
         timeout: 10
-      register: healthcheck
+      register: health
       retries: 15
       delay: 5
-      until: healthcheck.status == 200
-      when: service_name != "online-judge-frontend"
+      until: health.status == 200
+      when: service_name != 'online-judge-frontend'
 
-    - name: Wait for frontend
+    - name: Wait for frontend to respond
       uri:
         url: "http://localhost:3000"
         timeout: 10
-      register: frontend_check
+      register: fe_health
       retries: 15
       delay: 5
-      until: frontend_check.status == 200
-      when: service_name == "online-judge-frontend"
+      until: fe_health.status == 200
+      when: service_name == 'online-judge-frontend'
 
-    - name: Service running
+    - name: Done
       debug:
-        msg: "{{ service_name }}:{{ image_tag }} is healthy"
+        msg: "{{ service_name }} is healthy and running :{{ image_tag }}"
