@@ -5,10 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/wecode-backend/api-gateway/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/wecode-backend/submission-service/src/main/java/com/onlinejudge/submission_service/entity/enums/Difficulty.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/wecode-backend/worker-service/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/wecode-backend/worker-service/src/main/java/com/onlinejudge/worker_service/entity/Language.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../online_judge/Jenkinsfile" beforeDir="false" />
@@ -20,6 +16,8 @@
       <change beforePath="$PROJECT_DIR$/../online_judge/ansible/playbooks/setup-rabbitmq.yml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../online_judge/docker-compose.prod.yml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../online_judge/docker-compose.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../online_judge/k8s/redis/deployment.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../online_judge/k8s/result-service/deployment.yml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../online_judge/online-judge-backend/admin-service/.gitattributes" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../online_judge/online-judge-backend/admin-service/.gitignore" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../online_judge/online-judge-backend/admin-service/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
@@ -185,6 +183,7 @@
       <change beforePath="$PROJECT_DIR$/../online_judge/online-judge-frontend/src/pages/ProblemsPage.jsx" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../online_judge/online-judge-frontend/src/styles/index.css" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../online_judge/online-judge-frontend/vite.config.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../online_judge/wecode-frontend/src/main.jsx" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

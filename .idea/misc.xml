@@ -5,6 +5,12 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/online_judge/pom.xml" />
+        <option value="$PROJECT_DIR$/online_judge/online-judge-backend/api-gateway/pom.xml" />
+        <option value="$PROJECT_DIR$/online_judge/online-judge-backend/admin-service/pom.xml" />
+        <option value="$PROJECT_DIR$/online_judge/online-judge-backend/result-service/pom.xml" />
+        <option value="$PROJECT_DIR$/online_judge/online-judge-backend/submission-service/pom.xml" />
+        <option value="$PROJECT_DIR$/online_judge/online-judge-backend/worker-service/pom.xml" />
+        <option value="$PROJECT_DIR$/online_judge/online-judge-backend/pom.xml" />
       </list>
     </option>
   </component>
