@@ -1,0 +1,147 @@
+version: '3.8'
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: wecode-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wecode
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: wecode-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  redis:
+    image: redis:7
+    container_name: wecode-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  submission-service:
+    image: ${DOCKERHUB_USERNAME}/submission-service:${IMAGE_TAG}
+    container_name: submission-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/wecode
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  worker-service:
+    image: ${DOCKERHUB_USERNAME}/worker-service:${IMAGE_TAG}
+    container_name: worker-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/wecode
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_RABBITMQ_HOST: rabbitmq
+      EXECUTION_TEMP_DIR: /judge-tmp
+      EXECUTION_HOST_TEMP_DIR: /tmp/judge
+      RESULT_SERVICE_URL: http://result-service:8083
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/judge:/judge-tmp
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  result-service:
+    image: ${DOCKERHUB_USERNAME}/result-service:${IMAGE_TAG}
+    container_name: result-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/wecode
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  api-gateway:
+    image: ${DOCKERHUB_USERNAME}/api-gateway:${IMAGE_TAG}
+    container_name: api-gateway
+    ports:
+      - "8090:8090"
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      redis:
+        condition: service_healthy
+      submission-service:
+        condition: service_started
+      result-service:
+        condition: service_started
+
+  admin-service:
+    image: ${DOCKERHUB_USERNAME}/admin-service:${IMAGE_TAG}
+    container_name: admin-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/wecode
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  wecode-frontend:
+    image: ${DOCKERHUB_USERNAME}/wecode-frontend:${IMAGE_TAG}
+    container_name: wecode-frontend
+    ports:
+      - "3000:80"
+    environment:
+      NGINX_HOST: localhost
+    depends_on:
+      - api-gateway
+volumes:
+  mysql_data:

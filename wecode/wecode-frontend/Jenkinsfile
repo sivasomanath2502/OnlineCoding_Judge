@@ -1,0 +1,89 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_USERNAME = 'sivasomanath2502'
+        SERVICE_NAME       = 'wecode-frontend'
+        IMAGE_TAG          = "${BUILD_NUMBER}"
+        FRONTEND_DIR       = 'wecode/wecode-frontend'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    sh 'npm ci'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    sh """
+                        docker build \
+                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
+                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
+                    """
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credential',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+
+                    retry(3) {
+                        sh """
+                            echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                            docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG}
+                        """
+                    }
+
+                    retry(3) {
+                        sh """
+                            echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                            docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest
+                        """
+                    }
+
+                    sh "docker logout || true"
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                dir("wecode/ansible") {
+                    sh """
+                        ansible-playbook playbooks/deploy-service.yml \
+                            -e "service_name=${SERVICE_NAME}" \
+                            -e "image_tag=${IMAGE_TAG}" \
+                            -e "dockerhub_username=${DOCKERHUB_USERNAME}"
+                    """
+                }
+            }
+        }
+    }
+    post {
+        success { echo "✅ Frontend built: ${SERVICE_NAME}:${IMAGE_TAG}" }
+        failure { echo "❌ Frontend pipeline failed!" }
+        always  { sh 'docker image prune -f || true' }
+    }
+}

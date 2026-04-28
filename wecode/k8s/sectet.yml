@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wecode-secret
+  namespace: wecode
+type: Opaque
+stringData:
+  MYSQL_ROOT_PASSWORD:         "root"
+  SPRING_DATASOURCE_USERNAME:  "root"
+  SPRING_DATASOURCE_PASSWORD:  "root"
+  SPRING_RABBITMQ_USERNAME:    "guest"
+  SPRING_RABBITMQ_PASSWORD:    "guest"

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: submission-service
+  namespace: wecode
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: submission-service
+  template:
+    metadata:
+      labels:
+        app: submission-service
+    spec:
+      containers:
+        - name: submission-service
+          image: sivasomanath2502/submission-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: wecode-config
+            - secretRef:
+                name: wecode-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "300m"
