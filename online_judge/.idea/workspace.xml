@@ -5,8 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/api-gateway/src/main/resources/application-docker.properties" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/api-gateway/src/main/resources/application-docker.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/api-gateway/src/main/resources/application-local.properties" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/api-gateway/src/main/resources/application-local.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/online-judge-frontend/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-frontend/Jenkinsfile" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
