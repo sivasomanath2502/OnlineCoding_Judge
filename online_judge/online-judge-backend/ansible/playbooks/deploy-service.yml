@@ -108,8 +108,11 @@
         ports:
           - >-
             {{
-              service_name == "online-judge-frontend"
-              | ternary("3000:80", service_ports[service_name] ~ ":" ~ service_ports[service_name])
+              (service_name == "online-judge-frontend")
+              | ternary(
+                  "3000:80",
+                  service_ports[service_name] ~ ":" ~ service_ports[service_name]
+              )
             }}
         networks:
           - name: online-judge-network
