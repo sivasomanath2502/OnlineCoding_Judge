@@ -106,14 +106,8 @@
         state: started
         restart: yes
         ports:
-          - >-
-            {{
-              (service_name == "online-judge-frontend")
-              | ternary(
-                  "3000:80",
-                  service_ports[service_name] ~ ":" ~ service_ports[service_name]
-              )
-            }}
+          - "{{ '3000:80' if service_name == 'online-judge-frontend'
+               else service_ports[service_name] ~ ':' ~ service_ports[service_name] }}"
         networks:
           - name: online-judge-network
         env:
