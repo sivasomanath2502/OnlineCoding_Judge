@@ -9,11 +9,6 @@ RUN npm ci
 # Copy source
 COPY . .
 
-# Accept build arg for gateway URL
-# Default is localhost:8090 — override when building for production
-ARG VITE_GATEWAY_URL=http://localhost:8090
-ENV VITE_GATEWAY_URL=$VITE_GATEWAY_URL
-
 # Build — env var is baked into the JS bundle here
 RUN npm run build
 
