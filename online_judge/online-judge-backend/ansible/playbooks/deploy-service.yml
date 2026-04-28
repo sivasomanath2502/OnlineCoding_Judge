@@ -33,7 +33,23 @@
         name: online-judge-network
         state: present
 
-    # ---------------- SERVICE ----------------
+    # -------- INFRA SAFETY --------
+
+    - name: Ensure MySQL is reachable
+      wait_for:
+        host: localhost
+        port: 3306
+        timeout: 30
+      when: service_name in db_services
+
+    - name: Ensure Redis is reachable
+      wait_for:
+        host: localhost
+        port: 6379
+        timeout: 30
+      when: service_name == "api-gateway"
+
+    # -------- SERVICE --------
 
     - name: Pull image
       community.docker.docker_image:
@@ -63,31 +79,38 @@
           SPRING_DATA_REDIS_HOST: "{{ 'redis' if service_name == 'api-gateway' else omit }}"
           SPRING_DATA_REDIS_PORT: "{{ '6379' if service_name == 'api-gateway' else omit }}"
 
-    # ---------------- DEPENDENCY WAIT ----------------
+    # -------- DEPENDENCY WAIT --------
 
     - name: Wait for API Gateway before frontend
       uri:
         url: "http://localhost:8090/actuator/health"
+        return_content: yes
+        timeout: 10
       register: gateway_health
       retries: 15
       delay: 5
-      until: gateway_health.json.status == "UP"
+      until: >
+        gateway_health.status == 200 and
+        (gateway_health.json is defined) and
+        (gateway_health.json.status == "UP")
       when: service_name == "online-judge-frontend"
 
-    # ---------------- HEALTH CHECK ----------------
+    # -------- HEALTH CHECK --------
 
-    - name: Wait for backend service to be healthy
+    - name: Wait for backend service (basic health)
       uri:
         url: "http://localhost:{{ service_ports[service_name] }}/actuator/health"
+        timeout: 10
       register: healthcheck
       retries: 15
       delay: 5
-      until: healthcheck.json.status == "UP"
+      until: healthcheck.status == 200
       when: service_name != "online-judge-frontend"
 
     - name: Wait for frontend
       uri:
         url: "http://localhost:3000"
+        timeout: 10
       register: frontend_check
       retries: 15
       delay: 5
