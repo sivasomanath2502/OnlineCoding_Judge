@@ -30,8 +30,7 @@
         source: pull
         force_source: yes
 
-    # Uses --no-deps so only THIS container restarts, not its dependencies
-    - name: Restart {{ service_name }} via docker-compose
+    - name: Restart {{ service_name }} via docker-compose (no dependency restart)
       shell: |
         docker-compose -f docker-compose.prod.yml up -d --no-deps {{ service_name }}
       args:
@@ -40,21 +39,34 @@
         IMAGE_TAG: "{{ image_tag }}"
         DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
 
-    - name: Wait for {{ service_name }} to be healthy
-      uri:
-        url: "http://localhost:{{ service_ports[service_name] }}/actuator/health"
-        timeout: 10
-      register: health
-      retries: 15
-      delay: 5
-      until: health.status == 200
+    # ── Backend services need DB/RabbitMQ connection warm-up time ──
+    - name: Wait for {{ service_name }} JVM and DB pool to initialise
+      pause:
+        seconds: 25
       when: service_name != 'online-judge-frontend'
 
+    # ── nginx needs a moment to bind the port ──
     - name: Wait for frontend nginx to start
       pause:
         seconds: 10
       when: service_name == 'online-judge-frontend'
 
+    # ── Backend health check — waits until Spring Boot reports UP ──
+    - name: Wait for {{ service_name }} to be healthy
+      uri:
+        url: "http://localhost:{{ service_ports[service_name] }}/actuator/health"
+        timeout: 10
+        status_code: [200, 503]
+      register: health
+      retries: 20
+      delay: 5
+      until: >
+        health.status == 200 and
+        health.json is defined and
+        health.json.status == 'UP'
+      when: service_name != 'online-judge-frontend'
+
+    # ── Frontend health check ──
     - name: Wait for frontend to respond
       uri:
         url: "http://localhost:3000"
@@ -67,4 +79,4 @@
 
     - name: Done
       debug:
-        msg: "{{ service_name }} is healthy and running :{{ image_tag }}"
+        msg: "✅ {{ service_name }} is healthy and running :{{ image_tag }}"
