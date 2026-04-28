@@ -24,12 +24,12 @@ pipeline {
                         ).trim()
 
                         if (changedFiles.isEmpty()) {
-                            echo "No changed files detected, falling back to build all"
-                            changedFiles = 'submission-service worker-service result-service api-gateway admin-service online-judge-frontend'
+                            echo "No changed files detected — will skip builds but still deploy"
+                            changedFiles = ''
                         }
 
                     } catch (e) {
-                        echo "git diff failed (first commit or shallow clone), building all services"
+                        echo "git diff failed — building all services"
                         changedFiles = 'submission-service worker-service result-service api-gateway admin-service online-judge-frontend'
                     }
 
@@ -41,6 +41,17 @@ pipeline {
                     env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')           ? 'true' : 'false'
                     env.BUILD_ADMIN      = changedFiles.contains('admin-service')         ? 'true' : 'false'
                     env.BUILD_FRONTEND   = changedFiles.contains('online-judge-frontend') ? 'true' : 'false'
+
+                    echo """
+                    ============ Build Flags ============
+                      submission-service   : ${env.BUILD_SUBMISSION}
+                      worker-service       : ${env.BUILD_WORKER}
+                      result-service       : ${env.BUILD_RESULT}
+                      api-gateway          : ${env.BUILD_GATEWAY}
+                      admin-service        : ${env.BUILD_ADMIN}
+                      online-judge-frontend: ${env.BUILD_FRONTEND}
+                    =====================================
+                    """
                 }
             }
         }
@@ -55,31 +66,26 @@ pipeline {
                             build job: 'submission-service', wait: true, propagate: true
                         }
                     }
-
                     if (env.BUILD_WORKER == 'true') {
                         parallelJobs['worker-service'] = {
                             build job: 'worker-service', wait: true, propagate: true
                         }
                     }
-
                     if (env.BUILD_RESULT == 'true') {
                         parallelJobs['result-service'] = {
                             build job: 'result-service', wait: true, propagate: true
                         }
                     }
-
                     if (env.BUILD_GATEWAY == 'true') {
                         parallelJobs['api-gateway'] = {
                             build job: 'api-gateway', wait: true, propagate: true
                         }
                     }
-
                     if (env.BUILD_ADMIN == 'true') {
                         parallelJobs['admin-service'] = {
                             build job: 'admin-service', wait: true, propagate: true
                         }
                     }
-
                     if (env.BUILD_FRONTEND == 'true') {
                         parallelJobs['online-judge-frontend'] = {
                             build job: 'online-judge-frontend', wait: true, propagate: true
@@ -89,19 +95,19 @@ pipeline {
                     if (!parallelJobs.isEmpty()) {
                         parallel parallelJobs
                     } else {
-                        echo "No services changed — skipping all builds."
+                        echo "No service changes — skipping builds, proceeding to deploy."
                     }
                 }
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy Full Stack') {
             steps {
-                dir('online_judge/online-judge-backend/ansible') {
+                dir('online_judge/ansible') {
                     sh """
                         ansible-playbook playbooks/deploy-app.yml \
-                        -e "image_tag=latest" \
-                        -e "dockerhub_username=${DOCKERHUB_USERNAME}"
+                            -e "image_tag=latest" \
+                            -e "dockerhub_username=${DOCKERHUB_USERNAME}"
                     """
                 }
             }
@@ -109,14 +115,8 @@ pipeline {
     }
 
     post {
-        success {
-            echo 'Root pipeline completed successfully!'
-        }
-        failure {
-            echo 'Root pipeline failed!'
-        }
-        always {
-            sh 'docker system prune -f --filter "until=2h" || true'
-        }
+        success { echo 'Root pipeline completed successfully!' }
+        failure { echo 'Root pipeline failed!' }
+        always  { sh 'docker system prune -f --filter "until=2h" || true' }
     }
 }

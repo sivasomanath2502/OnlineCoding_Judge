@@ -79,4 +79,4 @@
 
     - name: Done
       debug:
-        msg: "✅ {{ service_name }} is healthy and running :{{ image_tag }}"
+        msg: "{{ service_name }} is healthy and running :{{ image_tag }}"

@@ -5,276 +5,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/admin-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/admin-service/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/.bin/nanoid" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/.bin/rolldown" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/.bin/vite" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/.package-lock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@oxc-project/types/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@oxc-project/types/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@oxc-project/types/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@oxc-project/types/types.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/filter/composable-filters.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/filter/composable-filters.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/filter/filter-vite-plugins.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/filter/filter-vite-plugins.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/filter/index.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/filter/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/filter/simple-filters.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/filter/simple-filters.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/index.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/utils.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/dist/utils.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/@rolldown/pluginutils/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/detect-libc/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/detect-libc/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/detect-libc/index.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/detect-libc/lib/detect-libc.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/detect-libc/lib/elf.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/detect-libc/lib/filesystem.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/detect-libc/lib/process.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/detect-libc/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/fdir/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/fdir/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/fdir/dist/index.cjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/fdir/dist/index.d.cts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/fdir/dist/index.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/fdir/dist/index.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/fdir/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss-linux-x64-gnu/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss-linux-x64-gnu/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss-linux-x64-gnu/lightningcss.linux-x64-gnu.node" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss-linux-x64-gnu/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss-linux-x64-musl/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss-linux-x64-musl/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss-linux-x64-musl/lightningcss.linux-x64-musl.node" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss-linux-x64-musl/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/node/ast.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/node/ast.js.flow" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/node/browserslistToTargets.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/node/composeVisitors.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/node/flags.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/node/index.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/node/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/node/index.js.flow" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/node/index.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/node/targets.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/node/targets.js.flow" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/lightningcss/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/async/index.browser.cjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/async/index.browser.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/async/index.cjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/async/index.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/async/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/async/index.native.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/async/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/bin/nanoid.cjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/index.browser.cjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/index.browser.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/index.cjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/index.d.cts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/index.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/nanoid.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/non-secure/index.cjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/non-secure/index.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/non-secure/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/non-secure/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/url-alphabet/index.cjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/url-alphabet/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/nanoid/url-alphabet/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picocolors/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picocolors/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picocolors/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picocolors/picocolors.browser.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picocolors/picocolors.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picocolors/picocolors.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picocolors/types.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picomatch/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picomatch/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picomatch/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picomatch/lib/constants.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picomatch/lib/parse.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picomatch/lib/picomatch.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picomatch/lib/scan.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picomatch/lib/utils.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picomatch/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/picomatch/posix.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/at-rule.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/at-rule.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/comment.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/comment.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/container.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/container.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/css-syntax-error.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/css-syntax-error.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/declaration.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/declaration.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/document.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/document.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/fromJSON.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/fromJSON.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/input.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/input.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/lazy-result.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/lazy-result.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/list.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/list.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/map-generator.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/no-work-result.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/no-work-result.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/node.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/node.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/parse.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/parse.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/parser.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/postcss.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/postcss.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/postcss.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/postcss.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/previous-map.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/previous-map.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/processor.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/processor.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/result.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/result.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/root.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/root.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/rule.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/rule.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/stringifier.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/stringifier.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/stringify.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/stringify.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/symbols.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/terminal-highlight.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/tokenize.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/warn-once.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/warning.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/lib/warning.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/postcss/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/bin/cli.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/cli.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/cli.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/config.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/config.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/experimental-index.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/experimental-index.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/experimental-runtime-types.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/filter-index.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/filter-index.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/get-log-filter.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/get-log-filter.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/index.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/index.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/parallel-plugin-worker.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/parallel-plugin-worker.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/parallel-plugin.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/parallel-plugin.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/parse-ast-index.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/parse-ast-index.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/plugins-index.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/plugins-index.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/binding-BeU_1iEk.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/binding-zH1vcmbM.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/bindingify-input-options-DbbBhzky.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/constructors-C2EWPKW3.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/constructors-D0W3rNfA.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/define-config-5HJ1b9vG.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/define-config-DJOr6Iwt.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/error-DL-e8-oE.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/get-log-filter-semyr3Lj.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/load-config-BoVO31Un.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/logging-C6h4g8dA.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/logs-D80CXhvg.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/misc-DJYbNKZX.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/normalize-string-or-regex-CbQQ69gT.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/parse-B_ZnWxLZ.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/prompt-U5ajztzG.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/resolve-tsconfig-CfYpGzid.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/rolldown-D3JZ9rMt.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/rolldown-build-DSxL8qiP.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/transform-DgZ3paSD.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/shared/watch-Bd8v9ewv.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/utils-index.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/dist/utils-index.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/rolldown/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/array-set.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/base64-vlq.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/base64.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/binary-search.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/mapping-list.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/quick-sort.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/source-map-consumer.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/source-map-consumer.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/source-map-generator.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/source-map-generator.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/source-node.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/source-node.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/lib/util.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/source-map.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/source-map-js/source-map.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/tinyglobby/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/tinyglobby/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/tinyglobby/dist/index.cjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/tinyglobby/dist/index.d.cts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/tinyglobby/dist/index.d.mts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/tinyglobby/dist/index.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/tinyglobby/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/LICENSE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/bin/openChrome.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/bin/vite.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/client.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/client/client.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/client/env.mjs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/chunks/build.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/chunks/chunk.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/chunks/dist.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/chunks/lib.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/chunks/logger.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/chunks/moduleRunnerTransport.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/chunks/node.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/chunks/postcss-import.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/cli.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/index.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/internal.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/internal.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/module-runner.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/dist/node/module-runner.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/misc/false.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/misc/true.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/customEvent.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/hmrPayload.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/hot.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/import-meta.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/importGlob.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/importMeta.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/internal/cssPreprocessorOptions.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/internal/esbuildOptions.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/internal/lightningcssOptions.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/internal/rollupTypeCompat.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/internal/terserOptions.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/node_modules/vite/types/metadata.d.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/result-service/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/admin-service/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/admin-service/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/ansible/ansible.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/ansible.cfg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/ansible/inventory.ini" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/inventory.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/ansible/playbooks/deploy-app.yml" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/playbooks/deploy-app.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/ansible/playbooks/deploy-service.yml" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/playbooks/deploy-service.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/ansible/playbooks/install-dependencies.yml" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/playbooks/install-dependencies.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/ansible/playbooks/setup-rabbitmq.yml" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/playbooks/setup-rabbitmq.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/api-gateway/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/api-gateway/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/docker-compose.prod.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.prod.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/result-service/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/result-service/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/submission-service/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/submission-service/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-backend/worker-service/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-backend/worker-service/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/online-judge-frontend/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/online-judge-frontend/Jenkinsfile" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -323,6 +71,7 @@
     &quot;Maven. [clean,install,-pl,submission-service].executor&quot;: &quot;Run&quot;,
     &quot;Maven. [clean,install,-pl,worker-service].executor&quot;: &quot;Run&quot;,
     &quot;Maven. [clean,install].executor&quot;: &quot;Run&quot;,
+    &quot;Maven. [clean,package,-DSkipTests].executor&quot;: &quot;Run&quot;,
     &quot;Maven. [clean,package,-DskipTests].executor&quot;: &quot;Run&quot;,
     &quot;Maven. [clean,package].executor&quot;: &quot;Run&quot;,
     &quot;Maven. [spring-boot:run...].executor&quot;: &quot;Run&quot;,
@@ -360,6 +109,7 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/online-judge-backend" />
     </key>
   </component>
@@ -372,9 +122,10 @@
       <command value="mvn test -pl submission-service" />
       <command value="mvn clean install" />
       <command value="mvn clean install -DskipTests" />
-      <command value="mvn clean package" />
       <command value="mvn clean install -pl worker-service" />
+      <command value="mvn clean package -DSkipTests" />
       <command value="mvn clean package -DskipTests" />
+      <command value="mvn clean package" />
       <command value="mvn spring-boot:run -Dspring-boot.run.profiles=local" />
     </option>
   </component>
@@ -384,7 +135,7 @@
         <env name="SPRING_PROFILES_ACTIVE" value="local" />
       </envs>
       <option name="MAIN_CLASS_NAME" value="com.onlinejudge.admin_service.AdminServiceApplication" />
-      <module name="admin-service" />
+      <module name="online_judge" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -428,17 +179,6 @@
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
-    </configuration>
-    <configuration default="true" type="JetRunConfigurationType">
-      <module name="online_judge" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
-      <module name="online_judge" />
-      <option name="filePath" />
-      <method v="2" />
     </configuration>
     <configuration name=" [clean,install]" type="MavenRunConfiguration" factoryName="Maven">
       <MavenSettings>
