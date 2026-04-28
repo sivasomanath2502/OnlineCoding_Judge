@@ -50,6 +50,11 @@
       until: health.status == 200
       when: service_name != 'online-judge-frontend'
 
+    - name: Wait for frontend nginx to start
+      pause:
+        seconds: 10
+      when: service_name == 'online-judge-frontend'
+
     - name: Wait for frontend to respond
       uri:
         url: "http://localhost:3000"
