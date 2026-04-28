@@ -11,6 +11,12 @@
         <option value="$PROJECT_DIR$/online-judge-backend/result-service/pom.xml" />
         <option value="$PROJECT_DIR$/online-judge-backend/submission-service/pom.xml" />
         <option value="$PROJECT_DIR$/online-judge-backend/pom.xml" />
+        <option value="$PROJECT_DIR$/wecode-backend/worker-service/pom.xml" />
+        <option value="$PROJECT_DIR$/wecode-backend/submission-service/pom.xml" />
+        <option value="$PROJECT_DIR$/wecode-backend/result-service/pom.xml" />
+        <option value="$PROJECT_DIR$/wecode-backend/api-gateway/pom.xml" />
+        <option value="$PROJECT_DIR$/wecode-backend/admin-service/pom.xml" />
+        <option value="$PROJECT_DIR$/wecode-backend/pom.xml" />
       </list>
     </option>
   </component>

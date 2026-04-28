@@ -14,9 +14,6 @@
         <module name="admin-service" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="wecode" target="1.5" />
-    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">

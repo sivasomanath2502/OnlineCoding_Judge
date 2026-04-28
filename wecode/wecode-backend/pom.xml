@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.onlinejudge</groupId>
-    <artifactId>wecode</artifactId>
+    <artifactId>online-judge</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
