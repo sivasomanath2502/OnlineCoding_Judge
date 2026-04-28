@@ -35,8 +35,10 @@ pipeline {
                 dir("${FRONTEND_DIR}") {
                     sh """
                         docker build \
-                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
-                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
+                            --build-arg VITE_GATEWAY_URL=http://localhost:8090 \
+                            -t ${DOCKERHUB_USERNAME}/wecode-frontend:${IMAGE_TAG} \
+                            -t ${DOCKERHUB_USERNAME}/wecode-frontend:latest \
+                            .
                     """
                 }
             }
