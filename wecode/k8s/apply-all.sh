@@ -4,11 +4,12 @@ set -e
 echo "🚀 Deploying WeCode to Kubernetes..."
 
 # Namespace first
-kubectl apply -f namespace.yaml
+kubectl apply -f namespace.yml
 
 # ConfigMap and Secrets
-kubectl apply -f configmap.yaml
-kubectl apply -f secret.yaml
+kubectl apply -f configmap.yml
+kubectl apply -f secret.yml
+
 
 # Infrastructure
 kubectl apply -f mysql/
