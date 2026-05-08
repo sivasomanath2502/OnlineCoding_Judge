@@ -43,7 +43,7 @@ pipeline {
         }
         stage('Deploy to Kubernetes') {
             steps {
-                dir('wecode/ansible') {
+                dir('wecode/ansible/playbooks') {
                     sh """
                         ansible-playbook playbooks/deploy-service-k8s.yml \
                             -e "service_name=${SERVICE_NAME}" \
