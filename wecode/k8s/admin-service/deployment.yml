@@ -24,23 +24,31 @@ spec:
                 name: wecode-config
             - secretRef:
                 name: wecode-secret
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            failureThreshold: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: 8084
-            initialDelaySeconds: 180
-            periodSeconds: 15
+            initialDelaySeconds: 10
+            periodSeconds: 10
             failureThreshold: 6
-            timeoutSeconds: 10
+            timeoutSeconds: 5
 
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: 8084
-            initialDelaySeconds: 210
-            periodSeconds: 30
-            failureThreshold: 5
-            timeoutSeconds: 10
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+            timeoutSeconds: 5
           resources:
             requests:
               memory: "256Mi"
