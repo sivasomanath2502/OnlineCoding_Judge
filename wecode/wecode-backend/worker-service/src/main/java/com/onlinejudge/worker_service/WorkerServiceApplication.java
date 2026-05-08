@@ -3,7 +3,6 @@ package com.onlinejudge.worker_service;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-// This is worker service automatically called by submission service for execution
 
 @SpringBootApplication
 public class WorkerServiceApplication {
