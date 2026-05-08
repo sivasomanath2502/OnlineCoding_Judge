@@ -101,11 +101,11 @@ pipeline {
             }
         }
 
-        stage('Deploy Full Stack') {
+        stage('Deploy to Kubernetes') {
             steps {
                 dir('wecode/ansible') {
                     sh """
-                        ansible-playbook playbooks/deploy-app.yml \
+                        ansible-playbook playbooks/deploy-app-k8s.yml \
                             -e "image_tag=latest" \
                             -e "dockerhub_username=${DOCKERHUB_USERNAME}"
                     """

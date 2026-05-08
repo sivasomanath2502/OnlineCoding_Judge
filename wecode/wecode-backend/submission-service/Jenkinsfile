@@ -1,26 +1,19 @@
 pipeline {
     agent any
-
     tools {
         maven 'Maven 3'
         jdk 'JDK 17'
     }
-
     environment {
         DOCKERHUB_USERNAME = 'sivasomanath2502'
         SERVICE_NAME       = 'submission-service'
         IMAGE_TAG          = "${BUILD_NUMBER}"
         ROOT_DIR           = 'wecode/wecode-backend'
     }
-
     stages {
-
         stage('Checkout') {
-            steps {
-                checkout scm
-            }
+            steps { checkout scm }
         }
-
         stage('Build') {
             steps {
                 dir("${ROOT_DIR}") {
@@ -28,43 +21,47 @@ pipeline {
                 }
             }
         }
-
-        stage('Docker Build') {
+        stage('Unit Tests') {
+            steps {
+                dir("${ROOT_DIR}") {
+                    sh "mvn test -pl ${SERVICE_NAME} || true"
+                }
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true,
+                          testResults: '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+        stage('Docker Build & Push') {
             steps {
                 dir("${ROOT_DIR}/${SERVICE_NAME}") {
-                    sh """
-                        docker build \
-                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
-                        -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
-                    """
-                }
-            }
-        }
-
-        stage('Docker Push') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'docker-hub-credential',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-
-                    retry(3) {
-                        sh """
-                            echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
-                            docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG}
-                            docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest
-                        """
+                    withCredentials([usernamePassword(
+                        credentialsId: 'docker-hub-credential',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        retry(3) {
+                            sh """
+                                docker build \
+                                    -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
+                                    -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
+                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                                docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG}
+                                docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest
+                            """
+                        }
+                        sh "docker logout || true"
                     }
-                    sh "docker logout || true"
                 }
             }
         }
-        stage('Deploy') {
+        stage('Deploy to Kubernetes') {
             steps {
-                dir("wecode/ansible") {
+                dir('wecode/ansible') {
                     sh """
-                        ansible-playbook playbooks/deploy-service.yml \
+                        ansible-playbook playbooks/deploy-service-k8s.yml \
                             -e "service_name=${SERVICE_NAME}" \
                             -e "image_tag=${IMAGE_TAG}" \
                             -e "dockerhub_username=${DOCKERHUB_USERNAME}"
@@ -73,16 +70,9 @@ pipeline {
             }
         }
     }
-
     post {
-        success {
-            echo "✅ ${SERVICE_NAME} deployed successfully — image tag: ${IMAGE_TAG}"
-        }
-        failure {
-            echo "❌ ${SERVICE_NAME} pipeline failed!"
-        }
-        always {
-            sh 'docker image prune -f || true'
-        }
+        success { echo "✅ ${SERVICE_NAME}:${IMAGE_TAG} deployed to Kubernetes" }
+        failure { echo "❌ ${SERVICE_NAME} pipeline failed" }
+        always  { sh 'docker image prune -f || true' }
     }
 }
