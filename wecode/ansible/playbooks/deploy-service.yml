@@ -1,42 +1,95 @@
 ---
-- name: Deploy single service to Kubernetes
-  hosts: app_servers
+- name: Deploy single service
+  hosts: localhost
   connection: local
-  gather_facts: yes
-  environment:
-    KUBECONFIG: /var/lib/jenkins/.kube/config
+  become: no
   vars:
     dockerhub_username: "sivasomanath2502"
     image_tag: "latest"
     service_name: ""
-    namespace: "wecode"
+    app_dir: "/opt/wecode"
+    service_ports:
+      submission-service: 8081
+      worker-service:     8082
+      result-service:     8083
+      api-gateway:        8090
+      admin-service:      8084
+      wecode-frontend:    3000
+
   tasks:
     - name: Validate service_name
       fail:
         msg: "service_name must be provided"
       when: service_name == ""
-    - name: Show what we are deploying
-      debug:
-        msg: "Deploying {{ service_name }}:{{ image_tag }} to namespace {{ namespace }}"
-    - name: Update image for {{ service_name }}
-      command: >
-        kubectl set image deployment/{{ service_name }}
-        {{ service_name }}={{ dockerhub_username }}/{{ service_name }}:{{ image_tag }}
-        -n {{ namespace }}
-    - name: Wait for rollout to complete
-      command: >
-        kubectl rollout status deployment/{{ service_name }}
-        -n {{ namespace }} --timeout=180s
-      register: rollout_status
-    - name: Show rollout status
-      debug:
-        msg: "{{ rollout_status.stdout }}"
-    - name: Get pod status for {{ service_name }}
-      command: kubectl get pods -n {{ namespace }} -l app={{ service_name }}
-      register: pod_status
-    - name: Show pod status
-      debug:
-        msg: "{{ pod_status.stdout_lines }}"
+
+    - name: Ensure infrastructure containers are running
+      shell: |
+        docker-compose -f docker-compose.prod.yml up -d mysql rabbitmq redis
+      args:
+        chdir: "{{ app_dir }}"
+      environment:
+        IMAGE_TAG: "{{ image_tag }}"
+        DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
+      when: service_name != 'wecode-frontend'
+
+    - name: Wait for MySQL healthy
+      shell: docker inspect --format='{{ '{{' }}json .State.Health.Status{{ '}}' }}' wecode-mysql
+      register: mysql_status
+      retries: 20
+      delay: 10
+      until: mysql_status.stdout == '"healthy"'
+      when: service_name in ['submission-service','worker-service','result-service','admin-service']
+
+    - name: Wait for RabbitMQ healthy
+      shell: docker inspect --format='{{ '{{' }}json .State.Health.Status{{ '}}' }}' wecode-rabbitmq
+      register: rabbit_status
+      retries: 20
+      delay: 10
+      until: rabbit_status.stdout == '"healthy"'
+      when: service_name in ['submission-service','worker-service']
+
+    - name: Pull latest image for {{ service_name }}
+      community.docker.docker_image:
+        name: "{{ dockerhub_username }}/{{ service_name }}"
+        tag: "{{ image_tag }}"
+        source: pull
+        force_source: yes
+
+    - name: Restart {{ service_name }}
+      shell: |
+        docker-compose -f docker-compose.prod.yml up -d --no-deps {{ service_name }}
+      args:
+        chdir: "{{ app_dir }}"
+      environment:
+        IMAGE_TAG: "{{ image_tag }}"
+        DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
+
+    - name: Wait for JVM warmup
+      pause:
+        seconds: 60
+      when: service_name != 'wecode-frontend'
+
+    - name: Health check for {{ service_name }}
+      uri:
+        url: "http://localhost:{{ service_ports[service_name] }}/actuator/health"
+        timeout: 10
+        status_code: [200, 503]
+      register: health
+      retries: 20
+      delay: 10
+      until: health.status == 200 and health.json.status == 'UP'
+      when: service_name != 'wecode-frontend'
+
+    - name: Frontend health check
+      uri:
+        url: "http://localhost:3000"
+        timeout: 10
+      register: fe_health
+      retries: 15
+      delay: 5
+      until: fe_health.status == 200
+      when: service_name == 'wecode-frontend'
+
     - name: Done
       debug:
-        msg: "{{ service_name }}:{{ image_tag }} is live in Kubernetes"
+        msg: "{{ service_name }} is healthy — tag: {{ image_tag }}"

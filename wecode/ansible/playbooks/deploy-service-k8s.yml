@@ -1,49 +1,42 @@
 ---
 - name: Deploy single service to Kubernetes
   hosts: app_servers
-  become: yes
-
+  connection: local
+  gather_facts: yes
+  environment:
+    KUBECONFIG: /var/lib/jenkins/.kube/config
   vars:
     dockerhub_username: "sivasomanath2502"
     image_tag: "latest"
     service_name: ""
     namespace: "wecode"
-
   tasks:
-
     - name: Validate service_name
       fail:
         msg: "service_name must be provided"
       when: service_name == ""
-
     - name: Show what we are deploying
       debug:
         msg: "Deploying {{ service_name }}:{{ image_tag }} to namespace {{ namespace }}"
-
     - name: Update image for {{ service_name }}
       command: >
         kubectl set image deployment/{{ service_name }}
         {{ service_name }}={{ dockerhub_username }}/{{ service_name }}:{{ image_tag }}
         -n {{ namespace }}
-
     - name: Wait for rollout to complete
       command: >
         kubectl rollout status deployment/{{ service_name }}
         -n {{ namespace }} --timeout=180s
       register: rollout_status
-
     - name: Show rollout status
       debug:
         msg: "{{ rollout_status.stdout }}"
-
     - name: Get pod status for {{ service_name }}
       command: kubectl get pods -n {{ namespace }} -l app={{ service_name }}
       register: pod_status
-
     - name: Show pod status
       debug:
         msg: "{{ pod_status.stdout_lines }}"
-
     - name: Done
       debug:
         msg: "{{ service_name }}:{{ image_tag }} is live in Kubernetes"
