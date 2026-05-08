@@ -1,27 +1,52 @@
 ---
 - name: Deploy single service
-  hosts: app_servers
-  become: yes
-
+  hosts: localhost
+  connection: local
+  become: no
   vars:
     dockerhub_username: "sivasomanath2502"
     image_tag: "latest"
     service_name: ""
     app_dir: "/opt/wecode"
     service_ports:
-      submission-service:    8081
-      worker-service:        8082
-      result-service:        8083
-      api-gateway:           8090
-      admin-service:         8084
-      wecode-frontend: 3000
+      submission-service: 8081
+      worker-service:     8082
+      result-service:     8083
+      api-gateway:        8090
+      admin-service:      8084
+      wecode-frontend:    3000
 
   tasks:
-
     - name: Validate service_name
       fail:
-        msg: "service_name must be provided via -e service_name=<name>"
+        msg: "service_name must be provided"
       when: service_name == ""
+
+    - name: Ensure infrastructure containers are running
+      shell: |
+        docker-compose -f docker-compose.prod.yml up -d mysql rabbitmq redis
+      args:
+        chdir: "{{ app_dir }}"
+      environment:
+        IMAGE_TAG: "{{ image_tag }}"
+        DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
+      when: service_name != 'wecode-frontend'
+
+    - name: Wait for MySQL healthy
+      shell: docker inspect --format='{{ '{{' }}json .State.Health.Status{{ '}}' }}' wecode-mysql
+      register: mysql_status
+      retries: 20
+      delay: 10
+      until: mysql_status.stdout == '"healthy"'
+      when: service_name in ['submission-service','worker-service','result-service','admin-service']
+
+    - name: Wait for RabbitMQ healthy
+      shell: docker inspect --format='{{ '{{' }}json .State.Health.Status{{ '}}' }}' wecode-rabbitmq
+      register: rabbit_status
+      retries: 20
+      delay: 10
+      until: rabbit_status.stdout == '"healthy"'
+      when: service_name in ['submission-service','worker-service']
 
     - name: Pull latest image for {{ service_name }}
       community.docker.docker_image:
@@ -30,7 +55,7 @@
         source: pull
         force_source: yes
 
-    - name: Restart {{ service_name }} via docker-compose (no dependency restart)
+    - name: Restart {{ service_name }}
       shell: |
         docker-compose -f docker-compose.prod.yml up -d --no-deps {{ service_name }}
       args:
@@ -39,35 +64,23 @@
         IMAGE_TAG: "{{ image_tag }}"
         DOCKERHUB_USERNAME: "{{ dockerhub_username }}"
 
-    # ── Backend services need DB/RabbitMQ connection warm-up time ──
-    - name: Wait for {{ service_name }} JVM and DB pool to initialise
+    - name: Wait for JVM warmup
       pause:
-        seconds: 25
+        seconds: 60
       when: service_name != 'wecode-frontend'
 
-    # ── nginx needs a moment to bind the port ──
-    - name: Wait for frontend nginx to start
-      pause:
-        seconds: 10
-      when: service_name == 'wecode-frontend'
-
-    # ── Backend health check — waits until Spring Boot reports UP ──
-    - name: Wait for {{ service_name }} to be healthy
+    - name: Health check for {{ service_name }}
       uri:
         url: "http://localhost:{{ service_ports[service_name] }}/actuator/health"
         timeout: 10
         status_code: [200, 503]
       register: health
       retries: 20
-      delay: 5
-      until: >
-        health.status == 200 and
-        health.json is defined and
-        health.json.status == 'UP'
+      delay: 10
+      until: health.status == 200 and health.json.status == 'UP'
       when: service_name != 'wecode-frontend'
 
-    # ── Frontend health check ──
-    - name: Wait for frontend to respond
+    - name: Frontend health check
       uri:
         url: "http://localhost:3000"
         timeout: 10
@@ -79,4 +92,4 @@
 
     - name: Done
       debug:
-        msg: "{{ service_name }} is healthy and running :{{ image_tag }}"
+        msg: "{{ service_name }} is healthy — tag: {{ image_tag }}"

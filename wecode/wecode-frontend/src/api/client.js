@@ -1,3 +1,4 @@
+// Frontend file where the connection to backend is done
 import axios from 'axios'
 
 const GATEWAY = ''
