@@ -3,6 +3,7 @@ package com.onlinejudge.api_gateway;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+// API_Gateway forward every request from here only
 @SpringBootApplication
 public class ApiGatewayApplication {
 

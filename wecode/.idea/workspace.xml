@@ -4,23 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/admin-service/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/admin-service/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/api-gateway/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/api-gateway/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/apply-all.sh" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/apply-all.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/frontend/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/frontend/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/mysql/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/mysql/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/rabbitmq/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/rabbitmq/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/result-service/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/result-service/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/submission-service/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/submission-service/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/worker-service/hpa.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/worker-service/hpa.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/java/com/onlinejudge/api_gateway/config/GatewayConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/java/com/onlinejudge/api_gateway/config/GatewayConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/resources/application-docker.properties" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/resources/application-docker.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-frontend/nginx.conf" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/nginx.conf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-frontend/src/api/client.js" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/src/api/client.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-frontend/src/pages/ProblemsPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/src/pages/ProblemsPage.jsx" afterDir="false" />
-    </list>
+    <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
