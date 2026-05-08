@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAllProblems } from '../api/client'
 
-const DIFF_ORDER = { EASY: 0, MEDIUM: 1, HARD: 2 }
-
 export default function ProblemsPage() {
   const [problems, setProblems] = useState([])
   const [loading, setLoading]   = useState(true)
@@ -32,13 +30,10 @@ export default function ProblemsPage() {
 
   return (
     <div className="problems-page">
-      {/* Hero */}
       <div className="problems-hero">
         <h1 className="hero-title">Practice. Code. <span className="accent">Improve.</span></h1>
         <p className="hero-sub">Solve algorithmic problems and sharpen your skills.</p>
       </div>
-
-      {/* Controls */}
       <div className="problems-controls">
         <div className="filter-tabs">
           {['ALL', 'EASY', 'MEDIUM', 'HARD'].map(d => (
@@ -58,11 +53,8 @@ export default function ProblemsPage() {
           onChange={e => setSearch(e.target.value)}
         />
       </div>
-
-      {/* Table */}
       {loading && <div className="state-box"><div className="spinner" />Loading problems...</div>}
       {error   && <div className="state-box error">{error}</div>}
-
       {!loading && !error && (
         <div className="problems-table">
           <div className="table-head">
@@ -72,11 +64,9 @@ export default function ProblemsPage() {
             <span>Time Limit</span>
             <span>Tests</span>
           </div>
-
           {displayed.length === 0 && (
             <div className="state-box">No problems match your filters.</div>
           )}
-
           {displayed.map((p, i) => (
             <div
               key={p.id}

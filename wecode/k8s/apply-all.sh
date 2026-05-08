@@ -32,9 +32,9 @@ kubectl apply -f api-gateway/
 kubectl apply -f frontend/
 
 echo "⏳ Waiting for services to be ready..."
-kubectl wait --for=condition=ready pod -l app=submission-service -n wecode --timeout=120s
-kubectl wait --for=condition=ready pod -l app=result-service     -n wecode --timeout=120s
-kubectl wait --for=condition=ready pod -l app=api-gateway        -n wecode --timeout=120s
+kubectl wait --for=condition=ready pod -l app=submission-service -n wecode --timeout=300s
+kubectl wait --for=condition=ready pod -l app=result-service     -n wecode --timeout=300s
+kubectl wait --for=condition=ready pod -l app=api-gateway        -n wecode --timeout=300s
 
 echo "✅ All services deployed!"
 echo ""

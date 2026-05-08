@@ -5,6 +5,8 @@ metadata:
   namespace: wecode
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: rabbitmq
@@ -31,10 +33,21 @@ spec:
                   name: wecode-secret
                   key: SPRING_RABBITMQ_PASSWORD
           readinessProbe:
-            exec:
-              command: ["rabbitmq-diagnostics", "ping"]
-            initialDelaySeconds: 20
+            tcpSocket:
+              port: 5672
+            initialDelaySeconds: 30
             periodSeconds: 10
+            failureThreshold: 6
+
+          livenessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - ping
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
           resources:
             requests:
               memory: "256Mi"

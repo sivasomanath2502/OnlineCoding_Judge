@@ -31,17 +31,12 @@ public class GatewayConfig {
             String userId = exchange.getRequest()
                     .getHeaders()
                     .getFirst("X-User-Id");
-
             if (userId != null && !userId.isBlank()) {
                 return Mono.just(userId);
             }
-
-            return Mono.just(
-                    exchange.getRequest()
-                            .getRemoteAddress()
-                            .getAddress()
-                            .getHostAddress()
-            );
+            var addr = exchange.getRequest().getRemoteAddress();
+            String ip = (addr != null) ? addr.getAddress().getHostAddress() : "unknown";
+            return Mono.just(ip);
         };
     }
 
