@@ -8,40 +8,43 @@
   vars:
     dockerhub_username: "sivasomanath2502"
     image_tag: "latest"
-    k8s_dir: "{{ playbook_dir }}/../../k8s"
+    k8s_dir: "/opt/wecode/k8s"
     namespace: "wecode"
   tasks:
     - name: Check kubectl is installed
       command: kubectl version --client
+      register: kubectl_check
       changed_when: false
-
+    - name: Ensure k8s directory exists on server
+      file:
+        path: "{{ k8s_dir }}"
+        state: directory
+        mode: '0755'
+    - name: Copy k8s manifests to server
+      copy:
+        src: "../../k8s/"
+        dest: "{{ k8s_dir }}/"
+        mode: '0644'
     - name: Apply namespace
-      command: kubectl apply -f {{ k8s_dir }}/namespace.yaml
-
+      command: kubectl apply -f {{ k8s_dir }}/namespace.yml
     - name: Apply ConfigMap
-      command: kubectl apply -f {{ k8s_dir }}/configmap.yaml
-
+      command: kubectl apply -f {{ k8s_dir }}/configmap.yml
     - name: Apply Secrets
-      command: kubectl apply -f {{ k8s_dir }}/secret.yaml
-
+      command: kubectl apply -f {{ k8s_dir }}/secret.yml
     - name: Apply infrastructure
       command: "{{ item }}"
       loop:
         - kubectl apply -f {{ k8s_dir }}/mysql/
         - kubectl apply -f {{ k8s_dir }}/rabbitmq/
         - kubectl apply -f {{ k8s_dir }}/redis/
-
     - name: Wait for MySQL
       command: kubectl wait --for=condition=ready pod -l app=mysql -n {{ namespace }} --timeout=120s
       retries: 3
       delay: 10
-
     - name: Wait for RabbitMQ
       command: kubectl wait --for=condition=ready pod -l app=rabbitmq -n {{ namespace }} --timeout=90s
-
     - name: Wait for Redis
       command: kubectl wait --for=condition=ready pod -l app=redis -n {{ namespace }} --timeout=60s
-
     - name: Apply application services
       command: "{{ item }}"
       loop:
@@ -51,26 +54,20 @@
         - kubectl apply -f {{ k8s_dir }}/admin-service/
         - kubectl apply -f {{ k8s_dir }}/api-gateway/
         - kubectl apply -f {{ k8s_dir }}/frontend/
-
     - name: Wait for API Gateway
       command: kubectl wait --for=condition=ready pod -l app=api-gateway -n {{ namespace }} --timeout=180s
       retries: 3
       delay: 15
-
     - name: Wait for submission-service
       command: kubectl wait --for=condition=ready pod -l app=submission-service -n {{ namespace }} --timeout=120s
-
     - name: Wait for frontend
       command: kubectl wait --for=condition=ready pod -l app=wecode-frontend -n {{ namespace }} --timeout=60s
-
     - name: Get all pods status
       command: kubectl get pods -n {{ namespace }}
       register: pods_status
-
     - name: Show pod status
       debug:
         msg: "{{ pods_status.stdout_lines }}"
-
     - name: Deployment complete
       debug:
         msg: "WeCode stack deployed to Kubernetes successfully!"
