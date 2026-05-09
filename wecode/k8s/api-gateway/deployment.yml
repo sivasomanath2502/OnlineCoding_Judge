@@ -5,6 +5,11 @@ metadata:
   namespace: wecode
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: api-gateway
@@ -39,7 +44,8 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8090
-            initialDelaySeconds: 10
+            # FIX 2: Increased from 10s to 30s — JVM needs more warmup time
+            initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 6
             timeoutSeconds: 5
@@ -48,7 +54,7 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8090
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 20
             failureThreshold: 3
             timeoutSeconds: 5

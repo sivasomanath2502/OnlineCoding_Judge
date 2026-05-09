@@ -5,6 +5,11 @@ metadata:
   namespace: wecode
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: admin-service
@@ -36,7 +41,7 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8084
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 6
             timeoutSeconds: 5
@@ -45,7 +50,7 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8084
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 20
             failureThreshold: 3
             timeoutSeconds: 5
