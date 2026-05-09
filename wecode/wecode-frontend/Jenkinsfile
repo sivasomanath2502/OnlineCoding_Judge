@@ -1,23 +1,21 @@
 pipeline {
     agent any
+    parameters {
+        string(name: 'DEPLOY_AFTER_BUILD', defaultValue: 'true',
+               description: 'false when triggered by root pipeline')
+    }
+
     environment {
         DOCKERHUB_USERNAME = 'sivasomanath2502'
         SERVICE_NAME       = 'wecode-frontend'
-        IMAGE_TAG          = "${BUILD_NUMBER}"
         FRONTEND_DIR       = 'wecode/wecode-frontend'
+        NAMESPACE          = 'wecode'
+        IMAGE_TAG          = "${BUILD_NUMBER}"
     }
+
     stages {
-        stage('Checkout') {
-            steps { checkout scm }
-        }
-        stage('Install & Build') {
-            steps {
-                dir("${FRONTEND_DIR}") {
-                    sh 'npm ci'
-                    sh 'npm run build'
-                }
-            }
-        }
+        stage('Checkout') { steps { checkout scm } }
+
         stage('Docker Build & Push') {
             steps {
                 dir("${FRONTEND_DIR}") {
@@ -41,7 +39,9 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy to Kubernetes') {
+            when { expression { params.DEPLOY_AFTER_BUILD == 'true' } }
             steps {
                 dir('wecode/ansible') {
                     sh """
@@ -54,9 +54,10 @@ pipeline {
             }
         }
     }
+
     post {
-        success { echo "✅ ${SERVICE_NAME}:${IMAGE_TAG} deployed to Kubernetes" }
-        failure { echo "❌ Frontend pipeline failed" }
+        success { echo "✅ ${SERVICE_NAME}:${IMAGE_TAG} — ${params.DEPLOY_AFTER_BUILD == 'true' ? 'deployed' : 'built + pushed (root deploys)'}" }
+        failure { echo "❌ ${SERVICE_NAME} pipeline failed" }
         always  { sh 'docker image prune -f || true' }
     }
 }

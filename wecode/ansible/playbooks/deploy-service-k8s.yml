@@ -1,24 +1,41 @@
 ---
+# deploy-service-k8s.yml
+#
+# Deploys a single service to an already-running Kubernetes cluster.
+# Called by individual service pipelines when DEPLOY_AFTER_BUILD=true
+# (i.e. the pipeline was triggered manually, not by the root pipeline).
+#
+# Required vars: service_name, image_tag, dockerhub_username
+#
 - name: Deploy single service to Kubernetes
   hosts: app_servers
   connection: local
-  gather_facts: yes
+  gather_facts: no
   environment:
     KUBECONFIG: /var/lib/jenkins/.kube/config
+
   vars:
     dockerhub_username: "sivasomanath2502"
     image_tag: "latest"
     service_name: ""
     namespace: "wecode"
+
   tasks:
-    - name: Validate service_name
+
+    - name: Validate service_name is provided
       fail:
-        msg: "service_name must be provided"
+        msg: "service_name must be provided (e.g. -e service_name=submission-service)"
       when: service_name == ""
 
-    - name: Show what we are deploying
+    - name: Check namespace exists
+      command: kubectl get namespace {{ namespace }}
+      register: ns_check
+      failed_when: ns_check.rc != 0
+      changed_when: false
+
+    - name: Deploying
       debug:
-        msg: "Deploying {{ service_name }}:{{ image_tag }} to namespace {{ namespace }}"
+        msg: "Updating {{ service_name }} → {{ dockerhub_username }}/{{ service_name }}:{{ image_tag }}"
 
     - name: Update image for {{ service_name }}
       command: >
@@ -29,21 +46,21 @@
     - name: Wait for rollout to complete
       command: >
         kubectl rollout status deployment/{{ service_name }}
-        -n {{ namespace }} --timeout=300s
+        -n {{ namespace }} --timeout=180s
       register: rollout_status
 
-    - name: Show rollout status
+    - name: Rollout result
       debug:
         msg: "{{ rollout_status.stdout }}"
 
-    - name: Get pod status for {{ service_name }}
+    - name: Get pods for {{ service_name }}
       command: kubectl get pods -n {{ namespace }} -l app={{ service_name }}
       register: pod_status
 
-    - name: Show pod status
+    - name: Pod status
       debug:
         msg: "{{ pod_status.stdout_lines }}"
 
     - name: Done
       debug:
-        msg: "{{ service_name }}:{{ image_tag }} is live in Kubernetes"
+        msg: "{{ service_name }}:{{ image_tag }} is live in Kubernetes namespace '{{ namespace }}'"

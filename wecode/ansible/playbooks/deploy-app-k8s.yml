@@ -1,22 +1,37 @@
 ---
-- name: Deploy full WeCode stack to Kubernetes
+# deploy-app-k8s.yml
+#
+# Full stack deploy — used ONLY when the wecode namespace does not exist yet
+# (fresh cluster, deleted namespace, or first-time setup).
+#
+# This playbook:
+#   1. Copies all k8s manifests to the server
+#   2. Applies namespace, configmap, secrets
+#   3. Deploys infra (mysql, rabbitmq, redis) and waits for readiness
+#   4. Deploys all application services
+#   5. Waits for readiness and prints status
+#
+- name: Full WeCode stack deploy to Kubernetes
   hosts: app_servers
   connection: local
   gather_facts: yes
   environment:
     KUBECONFIG: /var/lib/jenkins/.kube/config
+
   vars:
     dockerhub_username: "sivasomanath2502"
     image_tag: "latest"
     k8s_dir: "/opt/wecode/k8s"
     namespace: "wecode"
+
   tasks:
-    - name: Check kubectl is installed
+
+    - name: Check kubectl is available
       command: kubectl version --client
       register: kubectl_check
       changed_when: false
 
-    - name: Ensure k8s directory exists on server
+    - name: Ensure k8s staging directory exists
       file:
         path: "{{ k8s_dir }}"
         state: directory
@@ -37,27 +52,31 @@
     - name: Apply Secrets
       command: kubectl apply -f {{ k8s_dir }}/secret.yml
 
-    - name: Apply infrastructure
+    - name: Deploy infrastructure (MySQL, RabbitMQ, Redis)
       command: "{{ item }}"
       loop:
         - kubectl apply -f {{ k8s_dir }}/mysql/
         - kubectl apply -f {{ k8s_dir }}/rabbitmq/
         - kubectl apply -f {{ k8s_dir }}/redis/
 
-    - name: Wait for MySQL
-      # FIX: Increased timeout from 120s to 180s — mysqladmin ping probe
-      # takes longer than tcpSocket to pass since it waits for real readiness
-      command: kubectl wait --for=condition=ready pod -l app=mysql -n {{ namespace }} --timeout=180s
+    - name: Wait for MySQL to be ready
+      command: >
+        kubectl wait --for=condition=ready pod
+        -l app=mysql -n {{ namespace }} --timeout=120s
       retries: 3
       delay: 10
 
-    - name: Wait for RabbitMQ
-      command: kubectl wait --for=condition=ready pod -l app=rabbitmq -n {{ namespace }} --timeout=120s
+    - name: Wait for RabbitMQ to be ready
+      command: >
+        kubectl wait --for=condition=ready pod
+        -l app=rabbitmq -n {{ namespace }} --timeout=90s
 
-    - name: Wait for Redis
-      command: kubectl wait --for=condition=ready pod -l app=redis -n {{ namespace }} --timeout=60s
+    - name: Wait for Redis to be ready
+      command: >
+        kubectl wait --for=condition=ready pod
+        -l app=redis -n {{ namespace }} --timeout=60s
 
-    - name: Apply application services
+    - name: Deploy application services
       command: "{{ item }}"
       loop:
         - kubectl apply -f {{ k8s_dir }}/submission-service/
@@ -68,19 +87,23 @@
         - kubectl apply -f {{ k8s_dir }}/frontend/
 
     - name: Wait for API Gateway
-      # FIX: Increased timeout from 180s to 300s
-      command: kubectl wait --for=condition=ready pod -l app=api-gateway -n {{ namespace }} --timeout=300s
+      command: >
+        kubectl wait --for=condition=ready pod
+        -l app=api-gateway -n {{ namespace }} --timeout=180s
       retries: 3
       delay: 15
 
     - name: Wait for submission-service
-      # FIX: Increased timeout from 120s to 300s
-      command: kubectl wait --for=condition=ready pod -l app=submission-service -n {{ namespace }} --timeout=300s
+      command: >
+        kubectl wait --for=condition=ready pod
+        -l app=submission-service -n {{ namespace }} --timeout=120s
 
     - name: Wait for frontend
-      command: kubectl wait --for=condition=ready pod -l app=wecode-frontend -n {{ namespace }} --timeout=60s
+      command: >
+        kubectl wait --for=condition=ready pod
+        -l app=wecode-frontend -n {{ namespace }} --timeout=60s
 
-    - name: Get all pods status
+    - name: Get all pod statuses
       command: kubectl get pods -n {{ namespace }}
       register: pods_status
 
@@ -88,6 +111,6 @@
       debug:
         msg: "{{ pods_status.stdout_lines }}"
 
-    - name: Deployment complete
+    - name: Full stack deployment complete
       debug:
-        msg: "WeCode stack deployed to Kubernetes successfully!"
+        msg: "WeCode full stack deployed to Kubernetes namespace '{{ namespace }}'"
