@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: mysql-pvc
+  name: pvc
   namespace: wecode
 spec:
   accessModes:
@@ -9,3 +9,4 @@ spec:
   resources:
     requests:
       storage: 2Gi
+  volumeName: mysql-pv
