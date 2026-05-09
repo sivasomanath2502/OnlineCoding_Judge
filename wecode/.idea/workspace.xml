@@ -6,21 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ansible/playbooks/deploy-app-k8s.yml" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/playbooks/deploy-app-k8s.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ansible/playbooks/deploy-service-k8s.yml" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/playbooks/deploy-service-k8s.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/admin-service/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/admin-service/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/api-gateway/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/api-gateway/deployment.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/Jenkinsfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/mysql/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/mysql/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/result-service/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/result-service/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/submission-service/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/submission-service/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/worker-service/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/worker-service/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/admin-service/src/main/java/com/onlinejudge/admin_service/AdminServiceApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/admin-service/src/main/java/com/onlinejudge/admin_service/AdminServiceApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/api-gateway/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/api-gateway/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/java/com/onlinejudge/api_gateway/ApiGatewayApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/java/com/onlinejudge/api_gateway/ApiGatewayApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/result-service/src/main/java/com/onlinejudge/result_service/ResultServiceApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/result-service/src/main/java/com/onlinejudge/result_service/ResultServiceApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/submission-service/src/main/java/com/onlinejudge/submission_service/SubmissionServiceApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/submission-service/src/main/java/com/onlinejudge/submission_service/SubmissionServiceApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/worker-service/src/main/java/com/onlinejudge/worker_service/WorkerServiceApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/worker-service/src/main/java/com/onlinejudge/worker_service/WorkerServiceApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-frontend/src/api/client.js" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/src/api/client.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
