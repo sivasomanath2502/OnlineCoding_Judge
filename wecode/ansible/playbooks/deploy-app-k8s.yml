@@ -20,14 +20,55 @@
 
   tasks:
 
-    - name: Clean MySQL data directory on Minikube node
-      command: minikube ssh "sudo rm -rf /data/mysql && sudo mkdir -p /data/mysql"
-      changed_when: true
+    - name: Delete any existing MySQL cleanup pod (idempotent)
+      command: >
+        kubectl delete pod mysql-hostpath-cleanup
+        -n {{ k8s_namespace }} --ignore-not-found=true
+      changed_when: false
 
+    - name: Ensure namespace exists before cleanup pod
+      command: kubectl apply -f {{ k8s_dir }}/namespace.yml
+      ignore_errors: yes
+
+    - name: Run MySQL hostPath cleanup pod
+      command: >
+        kubectl run mysql-hostpath-cleanup
+        --image=busybox:1.36
+        --restart=Never
+        --namespace={{ k8s_namespace }}
+        --overrides={
+          "spec":{
+            "containers":[{
+              "name":"cleanup",
+              "image":"busybox:1.36",
+              "command":["sh","-c","rm -rf /data/mysql && mkdir -p /data/mysql && echo done"],
+              "volumeMounts":[{"name":"mysql-data","mountPath":"/data/mysql"}]
+            }],
+            "volumes":[{"name":"mysql-data","hostPath":{"path":"/data/mysql"}}],
+            "restartPolicy":"Never"
+          }
+        }
+
+    - name: Wait for cleanup pod to finish
+      command: >
+        kubectl wait pod/mysql-hostpath-cleanup
+        -n {{ k8s_namespace }}
+        --for=condition=Ready=false
+        --timeout=60s
+      ignore_errors: yes
+
+    - name: Delete cleanup pod
+      command: >
+        kubectl delete pod mysql-hostpath-cleanup
+        -n {{ k8s_namespace }} --ignore-not-found=true
+      changed_when: false
+
+    # ─── Step 1: Check tools ──────────────────────────────────────────────────
     - name: Check kubectl is available
       command: kubectl version --client
       changed_when: false
 
+    # ─── Step 2: Manifests directory ─────────────────────────────────────────
     - name: Ensure k8s manifests directory exists on server
       file:
         path: "{{ k8s_dir }}"
@@ -40,6 +81,7 @@
         dest: "{{ k8s_dir }}/"
         mode: '0644'
 
+    # ─── Step 3: Namespace / Config / Secrets ────────────────────────────────
     - name: Apply namespace
       command: kubectl apply -f {{ k8s_dir }}/namespace.yml
 
@@ -49,6 +91,7 @@
     - name: Apply Secrets
       command: kubectl apply -f {{ k8s_dir }}/secret.yml
 
+    # ─── Step 4: Infrastructure ───────────────────────────────────────────────
     - name: Apply MySQL manifests
       command: kubectl apply -f {{ k8s_dir }}/mysql/
 
@@ -58,6 +101,8 @@
     - name: Apply Redis manifests
       command: kubectl apply -f {{ k8s_dir }}/redis/
 
+    # ─── Step 5: Wait for infrastructure ─────────────────────────────────────
+    # MySQL check — skip the 120s delete-wait if the pod is already running
     - name: Check if MySQL pod is running
       command: >
         kubectl get pods -l app=mysql -n {{ k8s_namespace }}
@@ -96,19 +141,20 @@
         kubectl wait --for=condition=ready pod -l app=redis
         -n {{ k8s_namespace }} --timeout=60s
 
-    # ─── Apply all manifests first (no pods created yet, just spec updates) ───
+    # ─── Step 6: Apply all app manifests (specs only, no rollout yet) ─────────
     - name: Apply manifests for {{ item }}
       command: kubectl apply -f {{ k8s_dir }}/{{ item }}/
       loop: "{{ app_services }}"
 
-    # ─── Roll each service ONE AT A TIME via include_tasks ───────────────────
-    # loop on include_tasks IS supported — this is the correct Ansible pattern
+    # ─── Step 7: Roll each service ONE AT A TIME ──────────────────────────────
+    # include_tasks + loop is the correct Ansible pattern — block+loop is invalid
     - name: Roll out {{ item }} sequentially
       include_tasks: tasks/roll-service.yml
       loop: "{{ app_services }}"
       loop_control:
-        loop_var: service_name   # avoids collision with any outer 'item'
+        loop_var: service_name
 
+    # ─── Step 8: Final status ─────────────────────────────────────────────────
     - name: Get all pods status
       command: kubectl get pods -n {{ k8s_namespace }}
       register: pods_status
