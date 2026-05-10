@@ -19,9 +19,10 @@
       - worker-service
 
   tasks:
+
     - name: Clean MySQL data directory on Minikube node
-    - command: minikube ssh "sudo rm -rf /data/mysql && sudo mkdir -p /data/mysql"
-    - changed_when: true
+      command: minikube ssh "sudo rm -rf /data/mysql && sudo mkdir -p /data/mysql"
+      changed_when: true
 
     - name: Check kubectl is available
       command: kubectl version --client
