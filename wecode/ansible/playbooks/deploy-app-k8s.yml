@@ -25,6 +25,7 @@
       command: kubectl apply -f {{ k8s_dir }}/namespace.yml
       ignore_errors: yes
 
+    # ─── Step 1: Clean MySQL hostPath via a manifest-based pod ───────────────
     - name: Delete any existing MySQL cleanup pod (idempotent)
       command: >
         kubectl delete pod mysql-hostpath-cleanup
@@ -41,11 +42,23 @@
       command: kubectl apply -f /tmp/mysql-cleanup-pod.yml
 
     - name: Wait for cleanup pod to complete
-      command: >
-        kubectl wait pod/mysql-hostpath-cleanup
-        -n {{ k8s_namespace }}
-        --for=jsonpath='{.status.phase}'=Succeeded
-        --timeout=60s
+      shell: |
+        for i in $(seq 1 30); do
+          PHASE=$(kubectl get pod mysql-hostpath-cleanup -n {{ k8s_namespace }} \
+                  -o jsonpath='{.status.phase}' 2>/dev/null)
+          echo "Attempt $i: phase=$PHASE"
+          if [ "$PHASE" = "Succeeded" ]; then
+            echo "Cleanup pod completed successfully"
+            exit 0
+          fi
+          if [ "$PHASE" = "Failed" ]; then
+            echo "Cleanup pod failed"
+            exit 1
+          fi
+          sleep 2
+        done
+        echo "Timed out waiting for cleanup pod"
+        exit 1
 
     - name: Delete cleanup pod
       command: >
