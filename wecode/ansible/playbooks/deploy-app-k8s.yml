@@ -10,14 +10,13 @@
     build_number: "latest"
     k8s_dir: "/opt/wecode/k8s"
     k8s_namespace: "wecode"
-    # List of app services to roll in order — infrastructure first, heaviest last
     app_services:
       - submission-service
       - result-service
       - admin-service
       - api-gateway
       - wecode-frontend
-      - worker-service     # worker last — heaviest pod (512Mi/1Gi), rolls after others settle
+      - worker-service
 
   tasks:
 
@@ -37,7 +36,6 @@
         dest: "{{ k8s_dir }}/"
         mode: '0644'
 
-    # ─── Namespace / Config / Secrets ────────────────────────────────────────
     - name: Apply namespace
       command: kubectl apply -f {{ k8s_dir }}/namespace.yml
 
@@ -47,7 +45,6 @@
     - name: Apply Secrets
       command: kubectl apply -f {{ k8s_dir }}/secret.yml
 
-    # ─── Infrastructure ───────────────────────────────────────────────────────
     - name: Apply MySQL manifests
       command: kubectl apply -f {{ k8s_dir }}/mysql/
 
@@ -57,11 +54,7 @@
     - name: Apply Redis manifests
       command: kubectl apply -f {{ k8s_dir }}/redis/
 
-    # ─── Wait for infrastructure ──────────────────────────────────────────────
-    # FIX: Only wait for delete if MySQL is ACTUALLY being recreated.
-    # Check if any pod is in Terminating state first — skip the wait entirely
-    # if there's nothing terminating. This eliminates the 2-minute timeout waste.
-    - name: Check if MySQL pod is terminating
+    - name: Check if MySQL pod is running
       command: >
         kubectl get pods -l app=mysql -n {{ k8s_namespace }}
         --field-selector=status.phase=Running -o name
@@ -69,7 +62,7 @@
       changed_when: false
       ignore_errors: yes
 
-    - name: Wait for old MySQL pod to terminate (only if pod count is wrong)
+    - name: Wait for old MySQL pod to terminate (only if not running)
       command: >
         kubectl wait pod -l app=mysql -n {{ k8s_namespace }}
         --for=delete --timeout=120s
@@ -99,40 +92,19 @@
         kubectl wait --for=condition=ready pod -l app=redis
         -n {{ k8s_namespace }} --timeout=60s
 
-    # ─── Application services — ONE AT A TIME ─────────────────────────────────
-    # FIX: Apply + set image + wait are now a single loop per service.
-    # Only ONE service rolls at a time — no resource contention, no timeout races.
-
+    # ─── Apply all manifests first (no pods created yet, just spec updates) ───
     - name: Apply manifests for {{ item }}
       command: kubectl apply -f {{ k8s_dir }}/{{ item }}/
       loop: "{{ app_services }}"
 
-    - name: Update image tag and wait for rollout — {{ item }}
-      block:
-        - name: Set image — {{ item }}
-          command: >
-            kubectl set image deployment/{{ item }}
-            {{ item }}={{ dockerhub_username }}/{{ item }}:{{ build_number }}
-            -n {{ k8s_namespace }}
-
-        - name: Wait for rollout — {{ item }}
-          command: >
-            kubectl rollout status deployment/{{ item }}
-            -n {{ k8s_namespace }} --timeout=600s
-          register: rollout_result
-
-        - name: Rollback — {{ item }}
-          command: kubectl rollout undo deployment/{{ item }} -n {{ k8s_namespace }}
-          when: rollout_result.rc != 0
-
-        - name: Fail pipeline if rollout failed — {{ item }}
-          fail:
-            msg: "Rollout failed for {{ item }} — rolled back"
-          when: rollout_result.rc != 0
-
+    # ─── Roll each service ONE AT A TIME via include_tasks ───────────────────
+    # loop on include_tasks IS supported — this is the correct Ansible pattern
+    - name: Roll out {{ item }} sequentially
+      include_tasks: tasks/roll-service.yml
       loop: "{{ app_services }}"
+      loop_control:
+        loop_var: service_name   # avoids collision with any outer 'item'
 
-    # ─── Final status ─────────────────────────────────────────────────────────
     - name: Get all pods status
       command: kubectl get pods -n {{ k8s_namespace }}
       register: pods_status

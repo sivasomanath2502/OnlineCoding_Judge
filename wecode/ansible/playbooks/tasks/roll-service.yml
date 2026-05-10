@@ -1,0 +1,25 @@
+---
+# Called once per service by include_tasks loop in deploy-app-k8s.yml
+# Variable available: service_name (set via loop_control.loop_var)
+
+- name: "[{{ service_name }}] Set image"
+  command: >
+    kubectl set image deployment/{{ service_name }}
+    {{ service_name }}={{ dockerhub_username }}/{{ service_name }}:{{ build_number }}
+    -n {{ k8s_namespace }}
+
+- name: "[{{ service_name }}] Wait for rollout"
+  command: >
+    kubectl rollout status deployment/{{ service_name }}
+    -n {{ k8s_namespace }} --timeout=600s
+  register: rollout_result
+  failed_when: false    # don't fail here — let rollback task check
+
+- name: "[{{ service_name }}] Rollback on failure"
+  command: kubectl rollout undo deployment/{{ service_name }} -n {{ k8s_namespace }}
+  when: rollout_result.rc != 0
+
+- name: "[{{ service_name }}] Fail pipeline after rollback"
+  fail:
+    msg: "Rollout failed for {{ service_name }} — rolled back to previous version"
+  when: rollout_result.rc != 0
