@@ -1,8 +1,31 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// FRONTEND JENKINSFILE — aligned with backend service pipelines
+//
+// Changes from old pipeline:
+//   1. DEPLOY_AFTER_BUILD string param → IS_CHANGED + TRIGGER_TYPE + ROOT_IMAGE_TAG
+//      (matches exactly what the root pipeline sends)
+//   2. IMAGE_TAG uses ROOT_IMAGE_TAG when called by root, own BUILD_NUMBER when manual
+//   3. Build is always done (frontend has no mvn — Docker build IS the build)
+//      but guarded by IS_CHANGED when root-triggered, same as backend services
+//   4. Deploy stage: DEPLOY_AFTER_BUILD condition → TRIGGER_TYPE == 'manual'
+//      Root pipeline owns the final K8s deploy of ALL services (including frontend)
+//   5. Post block matches the 3-case pattern of backend services
+// ═══════════════════════════════════════════════════════════════════════════
+
 pipeline {
     agent any
+
+    // ─── Parameters ─────────────────────────────────────────────────────────
+    // IS_CHANGED   → did frontend code change? (set by root pipeline)
+    // TRIGGER_TYPE → 'root' (called by root) or 'manual' (developer triggered)
+    // ROOT_IMAGE_TAG → build number from root pipeline for tag consistency
     parameters {
-        string(name: 'DEPLOY_AFTER_BUILD', defaultValue: 'true',
-               description: 'false when triggered by root pipeline')
+        booleanParam(name: 'IS_CHANGED',   defaultValue: true,
+                     description: 'Set by root pipeline — true if frontend code changed')
+        string(name: 'TRIGGER_TYPE',       defaultValue: 'manual',
+               description: 'root = triggered by root pipeline | manual = developer triggered')
+        string(name: 'ROOT_IMAGE_TAG',     defaultValue: '',
+               description: 'Build number from root pipeline — empty when manually triggered')
     }
 
     environment {
@@ -10,13 +33,51 @@ pipeline {
         SERVICE_NAME       = 'wecode-frontend'
         FRONTEND_DIR       = 'wecode/wecode-frontend'
         NAMESPACE          = 'wecode'
-        IMAGE_TAG          = "${BUILD_NUMBER}"
+        // Use ROOT_IMAGE_TAG when called by root, own BUILD_NUMBER when manual
+        IMAGE_TAG          = "${params.ROOT_IMAGE_TAG ?: env.BUILD_NUMBER}"
     }
 
     stages {
-        stage('Checkout') { steps { checkout scm } }
 
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        // ─── Decision Stage ─────────────────────────────────────────────────
+        // manual trigger           → always build + push
+        // root trigger + changed   → build + push (root deploys)
+        // root trigger + unchanged → skip build (root redeploys existing image)
+        stage('Decide Build Path') {
+            steps {
+                script {
+                    def isManual  = (params.TRIGGER_TYPE == 'manual')
+                    def isChanged = params.IS_CHANGED
+
+                    env.DO_FULL_BUILD = (isManual || isChanged) ? 'true' : 'false'
+
+                    echo """
+============ Build Decision ============
+  SERVICE       : ${SERVICE_NAME}
+  TRIGGER_TYPE  : ${params.TRIGGER_TYPE}
+  IS_CHANGED    : ${isChanged}
+  IS_MANUAL     : ${isManual}
+  DO_FULL_BUILD : ${env.DO_FULL_BUILD}
+  IMAGE_TAG     : ${IMAGE_TAG}
+========================================
+                    """
+
+                    if (env.DO_FULL_BUILD == 'false') {
+                        echo "Skipping build — unchanged frontend will be redeployed with existing image"
+                    }
+                }
+            }
+        }
+
+        // ─── Docker Build & Push ─────────────────────────────────────────────
+        // For frontend the Docker build IS the build step (Vite builds inside the
+        // multi-stage Dockerfile), so there is no separate Maven/npm stage here.
         stage('Docker Build & Push') {
+            when { expression { env.DO_FULL_BUILD == 'true' } }
             steps {
                 dir("${FRONTEND_DIR}") {
                     withCredentials([usernamePassword(
@@ -26,10 +87,10 @@ pipeline {
                     )]) {
                         retry(3) {
                             sh """
+                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
                                 docker build \
                                     -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
                                     -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
-                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
                                 docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG}
                                 docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest
                             """
@@ -40,15 +101,20 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            when { expression { params.DEPLOY_AFTER_BUILD == 'true' } }
+        // ─── Manual Trigger: Deploy this service only ────────────────────────
+        // When manually triggered, deploy only the frontend via Ansible.
+        // When root-triggered, the root pipeline owns the final K8s deploy
+        // of ALL services (including frontend) after all builds complete.
+        stage('Deploy (Manual Trigger Only)') {
+            when { expression { params.TRIGGER_TYPE == 'manual' } }
             steps {
                 dir('wecode/ansible') {
                     sh """
                         ansible-playbook playbooks/deploy-service-k8s.yml \
                             -e "service_name=${SERVICE_NAME}" \
                             -e "image_tag=${IMAGE_TAG}" \
-                            -e "dockerhub_username=${DOCKERHUB_USERNAME}"
+                            -e "dockerhub_username=${DOCKERHUB_USERNAME}" \
+                            -e "namespace=${NAMESPACE}"
                     """
                 }
             }
@@ -56,7 +122,17 @@ pipeline {
     }
 
     post {
-        success { echo "✅ ${SERVICE_NAME}:${IMAGE_TAG} — ${params.DEPLOY_AFTER_BUILD == 'true' ? 'deployed' : 'built + pushed (root deploys)'}" }
+        success {
+            script {
+                if (params.TRIGGER_TYPE == 'manual') {
+                    echo "✅ ${SERVICE_NAME}:${IMAGE_TAG} — manually triggered, built and deployed"
+                } else if (env.DO_FULL_BUILD == 'true') {
+                    echo "✅ ${SERVICE_NAME}:${IMAGE_TAG} — built and pushed (root pipeline deploys)"
+                } else {
+                    echo "✅ ${SERVICE_NAME} — no change, skipped build (root pipeline redeploys existing image)"
+                }
+            }
+        }
         failure { echo "❌ ${SERVICE_NAME} pipeline failed" }
         always  { sh 'docker image prune -f || true' }
     }
