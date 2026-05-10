@@ -167,7 +167,7 @@ pipeline {
                         ansible-playbook playbooks/deploy-app-k8s.yml \
                             -e "build_number=${BUILD_NUMBER}" \
                             -e "dockerhub_username=${DOCKERHUB_USERNAME}" \
-                            -e "namespace=${NAMESPACE}"
+                            -e "k8s_namespace=${NAMESPACE}"
                     """
                 }
             }
