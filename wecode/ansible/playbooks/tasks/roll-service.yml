@@ -1,8 +1,14 @@
 ---
+# tasks/roll-service.yml
+# Rolls out a single service. Called in a loop from deploy-app-k8s.yml.
+# Uses service_tags[service_name] to resolve the correct image tag:
+#   - If the service was rebuilt this run → versioned tag (build_number)
+#   - If the service was NOT rebuilt      → 'latest' (avoids ImagePullBackOff)
+
 - name: "[{{ service_name }}] Set image"
   command: >
     kubectl set image deployment/{{ service_name }}
-    {{ service_name }}={{ dockerhub_username }}/{{ service_name }}:{{ build_number }}
+    {{ service_name }}={{ dockerhub_username }}/{{ service_name }}:{{ service_tags[service_name] }}
     -n {{ k8s_namespace }}
 
 - name: "[{{ service_name }}] Force pod restart to pull latest image"

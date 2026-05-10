@@ -16,7 +16,7 @@ pipeline {
                     branches: [[name: '*/main']],
                     extensions: [[
                         $class: 'CloneOption',
-                        depth: 0,       // full history — not shallow
+                        depth: 0,
                         shallow: false,
                         noTags: false
                     ]],
@@ -71,14 +71,14 @@ pipeline {
                     env.BUILD_FRONTEND   = changedFiles.contains('wecode-frontend')    ? 'true' : 'false'
 
                     echo """
-============ Build Flags ============
-  submission-service : ${env.BUILD_SUBMISSION}
-  worker-service     : ${env.BUILD_WORKER}
-  result-service     : ${env.BUILD_RESULT}
-  api-gateway        : ${env.BUILD_GATEWAY}
-  admin-service      : ${env.BUILD_ADMIN}
-  wecode-frontend    : ${env.BUILD_FRONTEND}
-=====================================
+                        ============ Build Flags ============
+                          submission-service : ${env.BUILD_SUBMISSION}
+                          worker-service     : ${env.BUILD_WORKER}
+                          result-service     : ${env.BUILD_RESULT}
+                          api-gateway        : ${env.BUILD_GATEWAY}
+                          admin-service      : ${env.BUILD_ADMIN}
+                          wecode-frontend    : ${env.BUILD_FRONTEND}
+                        =====================================
                     """
                 }
             }
@@ -156,11 +156,10 @@ pipeline {
             }
         }
 
-        // ─── Stage 4: Deploy all services ────────────────────────────────────
-        // FIX: Pass env.BUILD_NUMBER instead of hardcoded "latest" so that
-        // each deployment is traceable back to the Jenkins build that created it.
-        // Images pushed by child pipelines use ROOT_IMAGE_TAG (= BUILD_NUMBER),
-        // so Ansible must use the same tag to pull the right image.
+        // ─── Stage 4: Deploy all services to Kubernetes ───────────────────────
+        // Each service's change flag is passed so Ansible can decide per-service
+        // whether to deploy the new versioned tag (build_number) or keep 'latest'
+        // for services that were NOT rebuilt this run — preventing ImagePullBackOff.
         stage('Deploy All Services to Kubernetes') {
             steps {
                 dir('wecode/ansible') {
@@ -168,7 +167,13 @@ pipeline {
                         ansible-playbook playbooks/deploy-app-k8s.yml \
                             -e "build_number=${env.BUILD_NUMBER}" \
                             -e "dockerhub_username=${DOCKERHUB_USERNAME}" \
-                            -e "k8s_namespace=${NAMESPACE}"
+                            -e "k8s_namespace=${NAMESPACE}" \
+                            -e "changed_submission=${env.BUILD_SUBMISSION}" \
+                            -e "changed_worker=${env.BUILD_WORKER}" \
+                            -e "changed_result=${env.BUILD_RESULT}" \
+                            -e "changed_gateway=${env.BUILD_GATEWAY}" \
+                            -e "changed_admin=${env.BUILD_ADMIN}" \
+                            -e "changed_frontend=${env.BUILD_FRONTEND}"
                     """
                 }
             }

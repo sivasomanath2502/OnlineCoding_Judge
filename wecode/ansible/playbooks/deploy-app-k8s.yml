@@ -10,9 +10,25 @@
     build_number: "latest"
     k8s_dir: "/opt/wecode/k8s"
     k8s_namespace: "wecode"
-    # FIX: Set to true only when you deliberately want to wipe the DB
-    # Pass -e "clean_mysql=true" from CLI or pipeline when needed
+
+    # FIX: MySQL wipe is now optional — pass -e "clean_mysql=true" only when
+    # you deliberately need a fresh database (first-time setup, broken init).
+    # Previously this ran unconditionally, destroying data on every deploy.
     clean_mysql: false
+
+    # FIX: Per-service change flags passed in from the root Jenkinsfile.
+    # Ansible uses these to decide which image tag to deploy per service:
+    #   - changed = true  → deploy the new versioned image (build_number tag)
+    #   - changed = false → keep 'latest' (image was not rebuilt this run,
+    #                        so the versioned tag does not exist on DockerHub
+    #                        and pulling it would cause ImagePullBackOff)
+    changed_submission: "false"
+    changed_worker:     "false"
+    changed_result:     "false"
+    changed_gateway:    "false"
+    changed_admin:      "false"
+    changed_frontend:   "false"
+
     app_services:
       - submission-service
       - result-service
@@ -21,11 +37,18 @@
       - wecode-frontend
       - worker-service
 
+    # Per-service image tag map — resolves at runtime using the change flags above.
+    service_tags:
+      submission-service: "{{ build_number if changed_submission == 'true' else 'latest' }}"
+      result-service:     "{{ build_number if changed_result     == 'true' else 'latest' }}"
+      admin-service:      "{{ build_number if changed_admin      == 'true' else 'latest' }}"
+      api-gateway:        "{{ build_number if changed_gateway    == 'true' else 'latest' }}"
+      wecode-frontend:    "{{ build_number if changed_frontend   == 'true' else 'latest' }}"
+      worker-service:     "{{ build_number if changed_worker     == 'true' else 'latest' }}"
+
   tasks:
 
-    # ─── FIX 1: MySQL wipe is now OPTIONAL — gated behind clean_mysql flag ────
-    # Previously this ran unconditionally on EVERY deploy, destroying your data.
-    # Now it only runs when you explicitly pass -e "clean_mysql=true"
+    # ─── FIX: MySQL wipe is now gated — only runs when explicitly requested ───
     - name: Clean MySQL data directory (only when clean_mysql=true)
       shell: |
         sudo rm -rf /data/mysql
@@ -34,9 +57,9 @@
       changed_when: true
       when: clean_mysql | bool
 
-    # ─── FIX 2: Delete the old cleanup pod before re-applying ────────────────
-    # Without this, every deploy leaves a stale mysql-hostpath-cleanup pod
-    # in Error state that accumulates over time.
+    # ─── FIX: Delete stale cleanup pod before re-applying ────────────────────
+    # Without this, every deploy leaves a mysql-hostpath-cleanup pod in Error
+    # state that accumulates over time.
     - name: Delete old mysql-hostpath-cleanup pod if it exists
       command: kubectl delete pod mysql-hostpath-cleanup -n {{ k8s_namespace }} --ignore-not-found=true
       changed_when: false
@@ -53,9 +76,8 @@
         state: directory
         mode: '0755'
 
-    # ─── FIX 3: Always sync latest manifests before applying ─────────────────
-    # This also fixes the single-service deploy gap — manifests are always
-    # up to date on disk before anything is applied.
+    # Always sync latest manifests — ensures single-service deploys never
+    # apply stale manifests left over from a previous full deploy.
     - name: Copy k8s manifests to server
       copy:
         src: "../../k8s/"
@@ -127,6 +149,8 @@
       loop: "{{ app_services }}"
 
     # ─── Step 7: Roll each service ONE AT A TIME ──────────────────────────────
+    # service_tags is passed so roll-service.yml knows which tag to use
+    # for each individual service.
     - name: Roll out {{ item }} sequentially
       include_tasks: tasks/roll-service.yml
       loop: "{{ app_services }}"

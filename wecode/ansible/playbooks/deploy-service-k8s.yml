@@ -28,9 +28,9 @@
         msg: "Deploying {{ service_name }}:{{ image_tag }} to namespace {{ k8s_namespace }}"
 
     # ─── FIX: Always sync manifests before applying ───────────────────────────
-    # Previously this step was missing entirely — single-service deploys would
-    # apply whatever was already on disk at k8s_dir, which could be stale if
-    # the manifest had been updated since the last full deploy.
+    # Previously missing — single-service deploys applied whatever was already
+    # on disk at k8s_dir, which could be stale if a manifest had changed since
+    # the last full deploy.
     - name: Ensure k8s manifests directory exists
       file:
         path: "{{ k8s_dir }}"
