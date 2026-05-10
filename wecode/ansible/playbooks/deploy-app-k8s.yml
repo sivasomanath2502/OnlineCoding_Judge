@@ -20,58 +20,19 @@
 
   tasks:
 
-    # ─── Step 0: Ensure namespace exists first ────────────────────────────────
-    - name: Apply namespace
-      command: kubectl apply -f {{ k8s_dir }}/namespace.yml
-      ignore_errors: yes
-
-    # ─── Step 1: Clean MySQL hostPath via a manifest-based pod ───────────────
-    - name: Delete any existing MySQL cleanup pod (idempotent)
-      command: >
-        kubectl delete pod mysql-hostpath-cleanup
-        -n {{ k8s_namespace }} --ignore-not-found=true
-      changed_when: false
-
-    - name: Copy MySQL cleanup pod manifest to server
-      copy:
-        src: "templates/mysql-cleanup-pod.yml"
-        dest: "/tmp/mysql-cleanup-pod.yml"
-        mode: '0644'
-
-    - name: Run MySQL hostPath cleanup pod
-      command: kubectl apply -f /tmp/mysql-cleanup-pod.yml
-
-    - name: Wait for cleanup pod to complete
+    - name: Clean MySQL data directory directly on host
       shell: |
-        for i in $(seq 1 30); do
-          PHASE=$(kubectl get pod mysql-hostpath-cleanup -n {{ k8s_namespace }} \
-                  -o jsonpath='{.status.phase}' 2>/dev/null)
-          echo "Attempt $i: phase=$PHASE"
-          if [ "$PHASE" = "Succeeded" ]; then
-            echo "Cleanup pod completed successfully"
-            exit 0
-          fi
-          if [ "$PHASE" = "Failed" ]; then
-            echo "Cleanup pod failed"
-            exit 1
-          fi
-          sleep 2
-        done
-        echo "Timed out waiting for cleanup pod"
-        exit 1
+        sudo rm -rf /data/mysql
+        sudo mkdir -p /data/mysql
+        sudo chmod 777 /data/mysql
+      changed_when: true
 
-    - name: Delete cleanup pod
-      command: >
-        kubectl delete pod mysql-hostpath-cleanup
-        -n {{ k8s_namespace }} --ignore-not-found=true
-      changed_when: false
-
-    # ─── Step 2: Check tools ──────────────────────────────────────────────────
+    # ─── Step 1: Check tools ──────────────────────────────────────────────────
     - name: Check kubectl is available
       command: kubectl version --client
       changed_when: false
 
-    # ─── Step 3: Manifests directory ─────────────────────────────────────────
+    # ─── Step 2: Manifests directory ─────────────────────────────────────────
     - name: Ensure k8s manifests directory exists on server
       file:
         path: "{{ k8s_dir }}"
@@ -84,7 +45,7 @@
         dest: "{{ k8s_dir }}/"
         mode: '0644'
 
-    # ─── Step 4: Config / Secrets ─────────────────────────────────────────────
+    # ─── Step 3: Namespace / Config / Secrets ────────────────────────────────
     - name: Apply namespace
       command: kubectl apply -f {{ k8s_dir }}/namespace.yml
 
@@ -94,7 +55,7 @@
     - name: Apply Secrets
       command: kubectl apply -f {{ k8s_dir }}/secret.yml
 
-    # ─── Step 5: Infrastructure ───────────────────────────────────────────────
+    # ─── Step 4: Infrastructure ───────────────────────────────────────────────
     - name: Apply MySQL manifests
       command: kubectl apply -f {{ k8s_dir }}/mysql/
 
@@ -104,7 +65,7 @@
     - name: Apply Redis manifests
       command: kubectl apply -f {{ k8s_dir }}/redis/
 
-    # ─── Step 6: Wait for infrastructure ─────────────────────────────────────
+    # ─── Step 5: Wait for infrastructure ─────────────────────────────────────
     - name: Check if MySQL pod is running
       command: >
         kubectl get pods -l app=mysql -n {{ k8s_namespace }}
@@ -143,19 +104,19 @@
         kubectl wait --for=condition=ready pod -l app=redis
         -n {{ k8s_namespace }} --timeout=60s
 
-    # ─── Step 7: Apply all app manifests ─────────────────────────────────────
+    # ─── Step 6: Apply all app manifests ─────────────────────────────────────
     - name: Apply manifests for {{ item }}
       command: kubectl apply -f {{ k8s_dir }}/{{ item }}/
       loop: "{{ app_services }}"
 
-    # ─── Step 8: Roll each service ONE AT A TIME ──────────────────────────────
+    # ─── Step 7: Roll each service ONE AT A TIME ──────────────────────────────
     - name: Roll out {{ item }} sequentially
       include_tasks: tasks/roll-service.yml
       loop: "{{ app_services }}"
       loop_control:
         loop_var: service_name
 
-    # ─── Step 9: Final status ─────────────────────────────────────────────────
+    # ─── Step 8: Final status ─────────────────────────────────────────────────
     - name: Get all pods status
       command: kubectl get pods -n {{ k8s_namespace }}
       register: pods_status
