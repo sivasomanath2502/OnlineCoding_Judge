@@ -68,7 +68,6 @@ pipeline {
                     env.BUILD_RESULT     = changedFiles.contains('result-service')     ? 'true' : 'false'
                     env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')        ? 'true' : 'false'
                     env.BUILD_ADMIN      = changedFiles.contains('admin-service')      ? 'true' : 'false'
-                    // FIX: frontend is now included — detect changes under wecode-frontend/
                     env.BUILD_FRONTEND   = changedFiles.contains('wecode-frontend')    ? 'true' : 'false'
 
                     echo """
@@ -141,7 +140,6 @@ pipeline {
                                   string(name: 'ROOT_IMAGE_TAG',    value: env.BUILD_NUMBER)
                               ]
                     }
-                    // FIX: frontend pipeline now triggered in parallel alongside backend services
                     parallelJobs['wecode-frontend'] = {
                         build job: 'wecode-frontend',
                               wait: true,
@@ -158,12 +156,17 @@ pipeline {
             }
         }
 
+        // ─── Stage 4: Deploy all services ────────────────────────────────────
+        // FIX: Pass env.BUILD_NUMBER instead of hardcoded "latest" so that
+        // each deployment is traceable back to the Jenkins build that created it.
+        // Images pushed by child pipelines use ROOT_IMAGE_TAG (= BUILD_NUMBER),
+        // so Ansible must use the same tag to pull the right image.
         stage('Deploy All Services to Kubernetes') {
             steps {
                 dir('wecode/ansible') {
                     sh """
                         ansible-playbook playbooks/deploy-app-k8s.yml \
-                            -e "build_number=latest" \
+                            -e "build_number=${env.BUILD_NUMBER}" \
                             -e "dockerhub_username=${DOCKERHUB_USERNAME}" \
                             -e "k8s_namespace=${NAMESPACE}"
                     """
@@ -173,7 +176,7 @@ pipeline {
     }
 
     post {
-        success { echo "✅ Root pipeline completed — all services deployed" }
+        success { echo "✅ Root pipeline completed — all services deployed (build ${env.BUILD_NUMBER})" }
         failure { echo "❌ Root pipeline failed" }
         always  { sh 'docker system prune -f --filter "until=2h" || true' }
     }

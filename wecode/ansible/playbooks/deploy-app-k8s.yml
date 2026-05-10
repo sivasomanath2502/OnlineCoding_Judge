@@ -10,6 +10,9 @@
     build_number: "latest"
     k8s_dir: "/opt/wecode/k8s"
     k8s_namespace: "wecode"
+    # FIX: Set to true only when you deliberately want to wipe the DB
+    # Pass -e "clean_mysql=true" from CLI or pipeline when needed
+    clean_mysql: false
     app_services:
       - submission-service
       - result-service
@@ -20,12 +23,23 @@
 
   tasks:
 
-    - name: Clean MySQL data directory directly on host
+    # ─── FIX 1: MySQL wipe is now OPTIONAL — gated behind clean_mysql flag ────
+    # Previously this ran unconditionally on EVERY deploy, destroying your data.
+    # Now it only runs when you explicitly pass -e "clean_mysql=true"
+    - name: Clean MySQL data directory (only when clean_mysql=true)
       shell: |
         sudo rm -rf /data/mysql
         sudo mkdir -p /data/mysql
         sudo chmod 777 /data/mysql
       changed_when: true
+      when: clean_mysql | bool
+
+    # ─── FIX 2: Delete the old cleanup pod before re-applying ────────────────
+    # Without this, every deploy leaves a stale mysql-hostpath-cleanup pod
+    # in Error state that accumulates over time.
+    - name: Delete old mysql-hostpath-cleanup pod if it exists
+      command: kubectl delete pod mysql-hostpath-cleanup -n {{ k8s_namespace }} --ignore-not-found=true
+      changed_when: false
 
     # ─── Step 1: Check tools ──────────────────────────────────────────────────
     - name: Check kubectl is available
@@ -39,6 +53,9 @@
         state: directory
         mode: '0755'
 
+    # ─── FIX 3: Always sync latest manifests before applying ─────────────────
+    # This also fixes the single-service deploy gap — manifests are always
+    # up to date on disk before anything is applied.
     - name: Copy k8s manifests to server
       copy:
         src: "../../k8s/"

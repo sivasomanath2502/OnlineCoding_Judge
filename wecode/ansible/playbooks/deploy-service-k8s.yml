@@ -13,8 +13,6 @@
     dockerhub_username: "sivasomanath2502"
     image_tag: "latest"
     service_name: ""
-    # FIX: Renamed from 'namespace' → 'k8s_namespace' to avoid reserved Ansible
-    # variable name collision (same fix as deploy-app-k8s.yml).
     k8s_namespace: "wecode"
     k8s_dir: "/opt/wecode/k8s"
 
@@ -28,6 +26,22 @@
     - name: Show deployment details
       debug:
         msg: "Deploying {{ service_name }}:{{ image_tag }} to namespace {{ k8s_namespace }}"
+
+    # ─── FIX: Always sync manifests before applying ───────────────────────────
+    # Previously this step was missing entirely — single-service deploys would
+    # apply whatever was already on disk at k8s_dir, which could be stale if
+    # the manifest had been updated since the last full deploy.
+    - name: Ensure k8s manifests directory exists
+      file:
+        path: "{{ k8s_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Sync latest k8s manifests to server
+      copy:
+        src: "../../k8s/"
+        dest: "{{ k8s_dir }}/"
+        mode: '0644'
 
     - name: Ensure namespace exists
       command: kubectl apply -f {{ k8s_dir }}/namespace.yml
@@ -47,6 +61,7 @@
         kubectl rollout status deployment/{{ service_name }}
         -n {{ k8s_namespace }} --timeout=300s
       register: rollout_status
+      failed_when: false
 
     - name: Rollback {{ service_name }} on failure
       command: kubectl rollout undo deployment/{{ service_name }} -n {{ k8s_namespace }}
