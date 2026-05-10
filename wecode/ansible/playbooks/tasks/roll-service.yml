@@ -1,4 +1,23 @@
 ---
+- name: "[{{ service_name }}] Verify image exists on Docker Hub"
+  uri:
+    url: "https://hub.docker.com/v2/repositories/{{ dockerhub_username }}/{{ service_name }}/tags/{{ build_number }}"
+    method: GET
+    status_code: 200
+  register: image_check
+  retries: 3
+  delay: 10
+  until: image_check.status == 200
+  ignore_errors: yes
+
+- name: "[{{ service_name }}] Fail early if image does not exist"
+  fail:
+    msg: >
+      Image {{ dockerhub_username }}/{{ service_name }}:{{ build_number }}
+      does not exist on Docker Hub. Check the child pipeline build logs.
+      The image push likely failed or used a different tag.
+  when: image_check.status != 200
+
 - name: "[{{ service_name }}] Set image"
   command: >
     kubectl set image deployment/{{ service_name }}
