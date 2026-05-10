@@ -4,7 +4,23 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="" />
+    <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ansible/playbooks/deploy-app-k8s.yml" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/playbooks/deploy-app-k8s.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ansible/playbooks/deploy-service-k8s.yml" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/playbooks/deploy-service-k8s.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ansible/playbooks/selective-rollout-k8s.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/mysql/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/mysql/mysql-deployment.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/mysql/mysql-pv.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/mysql/pvc.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/mysql/mysql-pvc.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/mysql/service.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/mysql/mysql-service.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/rabbitmq/service.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/rabbitmq/service.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wecode-backend/admin-service/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/admin-service/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wecode-backend/api-gateway/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/api-gateway/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wecode-backend/result-service/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/result-service/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wecode-backend/submission-service/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/submission-service/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wecode-backend/worker-service/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/worker-service/Jenkinsfile" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

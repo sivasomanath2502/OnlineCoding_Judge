@@ -1,25 +1,83 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// SERVICE JENKINSFILE TEMPLATE
+// Copy this file into each service folder and change the 3 ENV vars:
+//   SERVICE_NAME, MODULE_PATH, SERVICE_PORT
+//
+// submission-service : SERVICE_NAME=submission-service  MODULE_PATH=submission-service  SERVICE_PORT=8081
+// worker-service     : SERVICE_NAME=worker-service      MODULE_PATH=worker-service      SERVICE_PORT=8082
+// result-service     : SERVICE_NAME=result-service      MODULE_PATH=result-service      SERVICE_PORT=8083
+// api-gateway        : SERVICE_NAME=api-gateway         MODULE_PATH=api-gateway         SERVICE_PORT=8090
+// admin-service      : SERVICE_NAME=admin-service       MODULE_PATH=admin-service       SERVICE_PORT=8084
+// ═══════════════════════════════════════════════════════════════════════════
+
 pipeline {
     agent any
     tools { maven 'Maven 3'; jdk 'JDK 17' }
 
+    // ─── Parameters ─────────────────────────────────────────────────────────
+    // BUG FIX: Changed DEPLOY_AFTER_BUILD string to proper typed params.
+    // IS_CHANGED   → did this service's code change? (set by root pipeline)
+    // TRIGGER_TYPE → 'root' (called by root) or 'manual' (developer triggered)
+    // ROOT_IMAGE_TAG → build number passed from root pipeline for tag consistency
     parameters {
-        string(name: 'DEPLOY_AFTER_BUILD', defaultValue: 'true',
-               description: 'false when triggered by root pipeline')
+        booleanParam(name: 'IS_CHANGED',     defaultValue: true,
+                     description: 'Set by root pipeline — true if this service code changed')
+        string(name: 'TRIGGER_TYPE',         defaultValue: 'manual',
+               description: 'root = triggered by root pipeline | manual = developer triggered')
+        string(name: 'ROOT_IMAGE_TAG',       defaultValue: '',
+               description: 'Build number from root pipeline — empty when manually triggered')
     }
 
     environment {
         DOCKERHUB_USERNAME = 'sivasomanath2502'
-        SERVICE_NAME       = 'admin-service'
+        SERVICE_NAME       = 'admin-service'   // ← CHANGE PER SERVICE
         ROOT_DIR           = 'wecode/wecode-backend'
-        MODULE_PATH        = 'admin-service'
+        MODULE_PATH        = 'admin-service'   // ← CHANGE PER SERVICE
         NAMESPACE          = 'wecode'
-        IMAGE_TAG          = "${BUILD_NUMBER}"
+        // BUG FIX: Use ROOT_IMAGE_TAG when called by root, own BUILD_NUMBER when manual
+        IMAGE_TAG          = "${params.ROOT_IMAGE_TAG ?: env.BUILD_NUMBER}"
     }
 
     stages {
-        stage('Checkout') { steps { checkout scm } }
 
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        // ─── Decision Stage ─────────────────────────────────────────────────
+        // BUG FIX: Full build logic per our design:
+        //   manual trigger  → always full build
+        //   root trigger + IS_CHANGED=true  → full build
+        //   root trigger + IS_CHANGED=false → skip build, use existing image
+        stage('Decide Build Path') {
+            steps {
+                script {
+                    def isManual  = (params.TRIGGER_TYPE == 'manual')
+                    def isChanged = params.IS_CHANGED
+
+                    env.DO_FULL_BUILD = (isManual || isChanged) ? 'true' : 'false'
+
+                    echo """
+============ Build Decision ============
+  SERVICE       : ${SERVICE_NAME}
+  TRIGGER_TYPE  : ${params.TRIGGER_TYPE}
+  IS_CHANGED    : ${isChanged}
+  IS_MANUAL     : ${isManual}
+  DO_FULL_BUILD : ${env.DO_FULL_BUILD}
+  IMAGE_TAG     : ${IMAGE_TAG}
+========================================
+                    """
+
+                    if (env.DO_FULL_BUILD == 'false') {
+                        echo "Skipping build — unchanged service will be redeployed with existing image"
+                    }
+                }
+            }
+        }
+
+        // ─── Build ──────────────────────────────────────────────────────────
         stage('Build') {
+            when { expression { env.DO_FULL_BUILD == 'true' } }
             steps {
                 dir("${ROOT_DIR}") {
                     sh "mvn -B clean package -DskipTests -pl ${MODULE_PATH} -am"
@@ -27,9 +85,15 @@ pipeline {
             }
         }
 
+        // ─── Unit Tests ─────────────────────────────────────────────────────
+        // BUG FIX: Tests must fail the pipeline — removed || true
+        // Kept allowEmptyResults so pipeline does not fail if no tests exist yet
         stage('Unit Tests') {
+            when { expression { env.DO_FULL_BUILD == 'true' } }
             steps {
-                dir("${ROOT_DIR}") { sh "mvn test -pl ${MODULE_PATH} || true" }
+                dir("${ROOT_DIR}") {
+                    sh "mvn test -pl ${MODULE_PATH}"
+                }
             }
             post {
                 always {
@@ -39,7 +103,11 @@ pipeline {
             }
         }
 
+        // ─── Docker Build & Push ─────────────────────────────────────────────
+        // BUG FIX: docker login MUST happen before docker build
+        // Previously login was after build — push would fail if session expired
         stage('Docker Build & Push') {
+            when { expression { env.DO_FULL_BUILD == 'true' } }
             steps {
                 dir("${ROOT_DIR}/${MODULE_PATH}") {
                     withCredentials([usernamePassword(
@@ -49,10 +117,10 @@ pipeline {
                     )]) {
                         retry(3) {
                             sh """
+                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
                                 docker build \
                                     -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
                                     -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
-                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
                                 docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG}
                                 docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest
                             """
@@ -63,15 +131,19 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            when { expression { params.DEPLOY_AFTER_BUILD == 'true' } }
+        // ─── Manual Trigger: Deploy this service only ────────────────────────
+        // When manually triggered, deploy only this service via Ansible.
+        // When root triggered, root pipeline owns the deploy of all services.
+        stage('Deploy (Manual Trigger Only)') {
+            when { expression { params.TRIGGER_TYPE == 'manual' } }
             steps {
                 dir('wecode/ansible') {
                     sh """
                         ansible-playbook playbooks/deploy-service-k8s.yml \
                             -e "service_name=${SERVICE_NAME}" \
                             -e "image_tag=${IMAGE_TAG}" \
-                            -e "dockerhub_username=${DOCKERHUB_USERNAME}"
+                            -e "dockerhub_username=${DOCKERHUB_USERNAME}" \
+                            -e "namespace=${NAMESPACE}"
                     """
                 }
             }
@@ -79,7 +151,17 @@ pipeline {
     }
 
     post {
-        success { echo "✅ ${SERVICE_NAME}:${IMAGE_TAG} — ${params.DEPLOY_AFTER_BUILD == 'true' ? 'deployed' : 'built + pushed (root deploys)'}" }
+        success {
+            script {
+                if (params.TRIGGER_TYPE == 'manual') {
+                    echo "✅ ${SERVICE_NAME}:${IMAGE_TAG} — manually triggered, built and deployed"
+                } else if (env.DO_FULL_BUILD == 'true') {
+                    echo "✅ ${SERVICE_NAME}:${IMAGE_TAG} — built and pushed (root pipeline deploys)"
+                } else {
+                    echo "✅ ${SERVICE_NAME} — no change, skipped build (root pipeline redeploys existing image)"
+                }
+            }
+        }
         failure { echo "❌ ${SERVICE_NAME} pipeline failed" }
         always  { sh 'docker image prune -f || true' }
     }

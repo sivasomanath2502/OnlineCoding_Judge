@@ -3,111 +3,165 @@ pipeline {
 
     environment {
         DOCKERHUB_USERNAME = 'sivasomanath2502'
+        NAMESPACE          = 'wecode'
     }
 
     stages {
 
+        // ─── Stage 1: Full clone — needed for reliable git diff ──────────────
         stage('Checkout') {
             steps {
-                checkout scm
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    extensions: [[
+                        $class: 'CloneOption',
+                        depth: 0,       // full history — not shallow
+                        shallow: false,
+                        noTags: false
+                    ]],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
             }
         }
 
+        // ─── Stage 2: Detect which services changed ──────────────────────────
         stage('Detect Changes') {
             steps {
                 script {
                     def changedFiles = ''
+                    def commitCount  = 0
+
                     try {
-                        changedFiles = sh(
-                            script: "git diff --name-only HEAD~1 HEAD",
+                        commitCount = sh(
+                            script: "git rev-list --count HEAD",
                             returnStdout: true
-                        ).trim()
-
-                        if (changedFiles.isEmpty()) {
-                            echo "No changed files detected — will skip builds but still deploy"
-                            changedFiles = ''
-                        }
-
+                        ).trim().toInteger()
                     } catch (e) {
-                        echo "git diff failed — building all services"
-                        changedFiles = 'submission-service worker-service result-service api-gateway admin-service wecode-frontend'
+                        echo "Could not count commits — treating as first run"
+                        commitCount = 1
+                    }
+
+                    if (commitCount == 1) {
+                        // First commit ever — build everything
+                        echo "First commit detected — building ALL services"
+                        changedFiles = 'submission-service worker-service result-service api-gateway admin-service'
+                    } else {
+                        try {
+                            changedFiles = sh(
+                                script: "git diff --name-only HEAD~1 HEAD",
+                                returnStdout: true
+                            ).trim()
+                        } catch (e) {
+                            echo "git diff failed — building ALL services"
+                            changedFiles = 'submission-service worker-service result-service api-gateway admin-service'
+                        }
+                    }
+
+                    if (changedFiles.isEmpty()) {
+                        echo "No changed files — will skip builds but still deploy all services"
                     }
 
                     echo "Changed files:\n${changedFiles}"
 
-                    env.BUILD_SUBMISSION = changedFiles.contains('submission-service')    ? 'true' : 'false'
-                    env.BUILD_WORKER     = changedFiles.contains('worker-service')        ? 'true' : 'false'
-                    env.BUILD_RESULT     = changedFiles.contains('result-service')        ? 'true' : 'false'
-                    env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')           ? 'true' : 'false'
-                    env.BUILD_ADMIN      = changedFiles.contains('admin-service')         ? 'true' : 'false'
-                    env.BUILD_FRONTEND   = changedFiles.contains('wecode-frontend') ? 'true' : 'false'
+                    // Set build flags per service
+                    // Note: frontend excluded from scope per project definition
+                    env.BUILD_SUBMISSION = changedFiles.contains('submission-service') ? 'true' : 'false'
+                    env.BUILD_WORKER     = changedFiles.contains('worker-service')     ? 'true' : 'false'
+                    env.BUILD_RESULT     = changedFiles.contains('result-service')     ? 'true' : 'false'
+                    env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')        ? 'true' : 'false'
+                    env.BUILD_ADMIN      = changedFiles.contains('admin-service')      ? 'true' : 'false'
 
                     echo """
-                    ============ Build Flags ============
-                      submission-service   : ${env.BUILD_SUBMISSION}
-                      worker-service       : ${env.BUILD_WORKER}
-                      result-service       : ${env.BUILD_RESULT}
-                      api-gateway          : ${env.BUILD_GATEWAY}
-                      admin-service        : ${env.BUILD_ADMIN}
-                      wecode-frontend: ${env.BUILD_FRONTEND}
-                    =====================================
+============ Build Flags ============
+  submission-service : ${env.BUILD_SUBMISSION}
+  worker-service     : ${env.BUILD_WORKER}
+  result-service     : ${env.BUILD_RESULT}
+  api-gateway        : ${env.BUILD_GATEWAY}
+  admin-service      : ${env.BUILD_ADMIN}
+=====================================
                     """
                 }
             }
         }
 
+        // ─── Stage 3: Trigger all service pipelines in parallel ──────────────
+        // BUG FIX: Pass IS_CHANGED=false (not DEPLOY_AFTER_BUILD)
+        // so each service skips build but still deploys via root ansible.
+        // BUG FIX: Pass TRIGGER_TYPE=root so services know who called them.
         stage('Trigger Service Pipelines') {
             steps {
                 script {
                     def parallelJobs = [:]
 
-                    if (env.BUILD_SUBMISSION == 'true') {
-                        parallelJobs['submission-service'] = {
-                            build job: 'submission-service', wait: true, propagate: true
-                        }
+                    parallelJobs['submission-service'] = {
+                        build job: 'submission-service',
+                              wait: true,
+                              propagate: true,
+                              parameters: [
+                                  booleanParam(name: 'IS_CHANGED',    value: env.BUILD_SUBMISSION == 'true'),
+                                  string(name: 'TRIGGER_TYPE',        value: 'root'),
+                                  string(name: 'ROOT_IMAGE_TAG',      value: env.BUILD_NUMBER)
+                              ]
                     }
-                    if (env.BUILD_WORKER == 'true') {
-                        parallelJobs['worker-service'] = {
-                            build job: 'worker-service', wait: true, propagate: true
-                        }
+                    parallelJobs['worker-service'] = {
+                        build job: 'worker-service',
+                              wait: true,
+                              propagate: true,
+                              parameters: [
+                                  booleanParam(name: 'IS_CHANGED',    value: env.BUILD_WORKER == 'true'),
+                                  string(name: 'TRIGGER_TYPE',        value: 'root'),
+                                  string(name: 'ROOT_IMAGE_TAG',      value: env.BUILD_NUMBER)
+                              ]
                     }
-                    if (env.BUILD_RESULT == 'true') {
-                        parallelJobs['result-service'] = {
-                            build job: 'result-service', wait: true, propagate: true
-                        }
+                    parallelJobs['result-service'] = {
+                        build job: 'result-service',
+                              wait: true,
+                              propagate: true,
+                              parameters: [
+                                  booleanParam(name: 'IS_CHANGED',    value: env.BUILD_RESULT == 'true'),
+                                  string(name: 'TRIGGER_TYPE',        value: 'root'),
+                                  string(name: 'ROOT_IMAGE_TAG',      value: env.BUILD_NUMBER)
+                              ]
                     }
-                    if (env.BUILD_GATEWAY == 'true') {
-                        parallelJobs['api-gateway'] = {
-                            build job: 'api-gateway', wait: true, propagate: true
-                        }
+                    parallelJobs['api-gateway'] = {
+                        build job: 'api-gateway',
+                              wait: true,
+                              propagate: true,
+                              parameters: [
+                                  booleanParam(name: 'IS_CHANGED',    value: env.BUILD_GATEWAY == 'true'),
+                                  string(name: 'TRIGGER_TYPE',        value: 'root'),
+                                  string(name: 'ROOT_IMAGE_TAG',      value: env.BUILD_NUMBER)
+                              ]
                     }
-                    if (env.BUILD_ADMIN == 'true') {
-                        parallelJobs['admin-service'] = {
-                            build job: 'admin-service', wait: true, propagate: true
-                        }
-                    }
-                    if (env.BUILD_FRONTEND == 'true') {
-                        parallelJobs['wecode-frontend'] = {
-                            build job: 'wecode-frontend', wait: true, propagate: true
-                        }
+                    parallelJobs['admin-service'] = {
+                        build job: 'admin-service',
+                              wait: true,
+                              propagate: true,
+                              parameters: [
+                                  booleanParam(name: 'IS_CHANGED',    value: env.BUILD_ADMIN == 'true'),
+                                  string(name: 'TRIGGER_TYPE',        value: 'root'),
+                                  string(name: 'ROOT_IMAGE_TAG',      value: env.BUILD_NUMBER)
+                              ]
                     }
 
-                    if (!parallelJobs.isEmpty()) {
-                        parallel parallelJobs
-                    } else {
-                        echo "No service changes — skipping builds, proceeding to deploy."
-                    }
+                    parallel parallelJobs
                 }
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        // ─── Stage 4: Deploy all services via Ansible ────────────────────────
+        // BUG FIX: Root pipeline owns the final K8s deploy of ALL services.
+        // Service pipelines only build + push when IS_CHANGED=true.
+        // This stage runs after all builds complete.
+        stage('Deploy All Services to Kubernetes') {
             steps {
                 dir('wecode/ansible') {
                     sh """
                         ansible-playbook playbooks/deploy-app-k8s.yml \
-                            -e "image_tag=latest" \
-                            -e "dockerhub_username=${DOCKERHUB_USERNAME}"
+                            -e "build_number=${BUILD_NUMBER}" \
+                            -e "dockerhub_username=${DOCKERHUB_USERNAME}" \
+                            -e "namespace=${NAMESPACE}"
                     """
                 }
             }
@@ -115,8 +169,8 @@ pipeline {
     }
 
     post {
-        success { echo 'Root pipeline completed successfully!' }
-        failure { echo 'Root pipeline failed!' }
+        success { echo "✅ Root pipeline completed — all services deployed" }
+        failure { echo "❌ Root pipeline failed" }
         always  { sh 'docker system prune -f --filter "until=2h" || true' }
     }
 }

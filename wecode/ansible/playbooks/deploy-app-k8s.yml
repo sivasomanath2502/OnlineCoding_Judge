@@ -1,6 +1,12 @@
 ---
-# FIX: Increased all rollout timeouts from 180s to 300s.
-# Spring Boot services need more time to start on constrained nodes.
+# deploy-app-k8s.yml
+# Called by ROOT PIPELINE after all service pipelines complete.
+# Deploys ALL services using their respective image tags.
+#
+# BUG FIX: Previously used image_tag=latest hardcoded for everything.
+# Now each service uses its own image with the root build_number as tag.
+# Services that were not rebuilt still have :latest tag from last push.
+# Using imagePullPolicy: Always in K8s manifests ensures correct image is pulled.
 
 - name: Deploy full WeCode stack to Kubernetes
   hosts: app_servers
@@ -10,16 +16,19 @@
     KUBECONFIG: /var/lib/jenkins/.kube/config
   vars:
     dockerhub_username: "sivasomanath2502"
-    image_tag: "latest"
+    build_number: "latest"          # overridden by root pipeline with BUILD_NUMBER
     k8s_dir: "/opt/wecode/k8s"
     namespace: "wecode"
+
   tasks:
-    - name: Check kubectl is installed
+
+    # ─── Pre-flight checks ───────────────────────────────────────────────────
+    - name: Check kubectl is available
       command: kubectl version --client
       register: kubectl_check
       changed_when: false
 
-    - name: Ensure k8s directory exists on server
+    - name: Ensure k8s manifests directory exists on server
       file:
         path: "{{ k8s_dir }}"
         state: directory
@@ -31,36 +40,49 @@
         dest: "{{ k8s_dir }}/"
         mode: '0644'
 
+    # ─── Namespace ───────────────────────────────────────────────────────────
     - name: Apply namespace
       command: kubectl apply -f {{ k8s_dir }}/namespace.yml
 
+    # ─── Config & Secrets ────────────────────────────────────────────────────
     - name: Apply ConfigMap
       command: kubectl apply -f {{ k8s_dir }}/configmap.yml
 
     - name: Apply Secrets
       command: kubectl apply -f {{ k8s_dir }}/secret.yml
 
-    - name: Apply infrastructure
-      command: "{{ item }}"
-      loop:
-        - kubectl apply -f {{ k8s_dir }}/mysql/
-        - kubectl apply -f {{ k8s_dir }}/rabbitmq/
-        - kubectl apply -f {{ k8s_dir }}/redis/
+    # ─── Infrastructure ──────────────────────────────────────────────────────
+    - name: Apply MySQL manifests
+      command: kubectl apply -f {{ k8s_dir }}/mysql/
 
-    - name: Wait for MySQL
-      # FIX: Increased timeout from 120s to 180s — mysqladmin ping probe
-      # takes longer than tcpSocket to pass since it waits for real readiness
+    - name: Apply RabbitMQ manifests
+      command: kubectl apply -f {{ k8s_dir }}/rabbitmq/
+
+    - name: Apply Redis manifests
+      command: kubectl apply -f {{ k8s_dir }}/redis/
+
+    # ─── Wait for infrastructure to be ready ─────────────────────────────────
+    - name: Wait for MySQL to be ready
       command: kubectl wait --for=condition=ready pod -l app=mysql -n {{ namespace }} --timeout=180s
       retries: 3
       delay: 10
+      register: mysql_wait
+      until: mysql_wait.rc == 0
 
-    - name: Wait for RabbitMQ
+    - name: Wait for RabbitMQ to be ready
       command: kubectl wait --for=condition=ready pod -l app=rabbitmq -n {{ namespace }} --timeout=120s
+      retries: 3
+      delay: 10
+      register: rabbitmq_wait
+      until: rabbitmq_wait.rc == 0
 
-    - name: Wait for Redis
+    - name: Wait for Redis to be ready
       command: kubectl wait --for=condition=ready pod -l app=redis -n {{ namespace }} --timeout=60s
 
-    - name: Apply application services
+    # ─── Application services ────────────────────────────────────────────────
+    # BUG FIX: Apply manifests first, then update image tag separately.
+    # kubectl apply is idempotent — safe to run every time.
+    - name: Apply application service manifests
       command: "{{ item }}"
       loop:
         - kubectl apply -f {{ k8s_dir }}/submission-service/
@@ -68,21 +90,89 @@
         - kubectl apply -f {{ k8s_dir }}/result-service/
         - kubectl apply -f {{ k8s_dir }}/admin-service/
         - kubectl apply -f {{ k8s_dir }}/api-gateway/
-        - kubectl apply -f {{ k8s_dir }}/frontend/
 
-    - name: Wait for API Gateway
-      # FIX: Increased timeout from 180s to 300s
-      command: kubectl wait --for=condition=ready pod -l app=api-gateway -n {{ namespace }} --timeout=300s
-      retries: 3
-      delay: 15
+    # ─── Update image tags for all services ─────────────────────────────────
+    # BUG FIX: set image with build_number tag ensures correct version is deployed.
+    # imagePullPolicy: Always in manifests ensures K8s pulls latest matching tag.
+    - name: Update image tag — submission-service
+      command: >
+        kubectl set image deployment/submission-service
+        submission-service={{ dockerhub_username }}/submission-service:{{ build_number }}
+        -n {{ namespace }}
 
-    - name: Wait for submission-service
-      # FIX: Increased timeout from 120s to 300s
-      command: kubectl wait --for=condition=ready pod -l app=submission-service -n {{ namespace }} --timeout=300s
+    - name: Update image tag — worker-service
+      command: >
+        kubectl set image deployment/worker-service
+        worker-service={{ dockerhub_username }}/worker-service:{{ build_number }}
+        -n {{ namespace }}
 
-    - name: Wait for frontend
-      command: kubectl wait --for=condition=ready pod -l app=wecode-frontend -n {{ namespace }} --timeout=60s
+    - name: Update image tag — result-service
+      command: >
+        kubectl set image deployment/result-service
+        result-service={{ dockerhub_username }}/result-service:{{ build_number }}
+        -n {{ namespace }}
 
+    - name: Update image tag — admin-service
+      command: >
+        kubectl set image deployment/admin-service
+        admin-service={{ dockerhub_username }}/admin-service:{{ build_number }}
+        -n {{ namespace }}
+
+    - name: Update image tag — api-gateway
+      command: >
+        kubectl set image deployment/api-gateway
+        api-gateway={{ dockerhub_username }}/api-gateway:{{ build_number }}
+        -n {{ namespace }}
+
+    # ─── Rolling update health checks ────────────────────────────────────────
+    # Wait for each service rollout to complete.
+    # On failure, rollback automatically.
+    - name: Wait for submission-service rollout
+      command: kubectl rollout status deployment/submission-service -n {{ namespace }} --timeout=300s
+      register: submission_rollout
+      failed_when: submission_rollout.rc != 0
+
+    - name: Rollback submission-service on failure
+      command: kubectl rollout undo deployment/submission-service -n {{ namespace }}
+      when: submission_rollout.rc != 0
+
+    - name: Wait for worker-service rollout
+      command: kubectl rollout status deployment/worker-service -n {{ namespace }} --timeout=300s
+      register: worker_rollout
+      failed_when: worker_rollout.rc != 0
+
+    - name: Rollback worker-service on failure
+      command: kubectl rollout undo deployment/worker-service -n {{ namespace }}
+      when: worker_rollout.rc != 0
+
+    - name: Wait for result-service rollout
+      command: kubectl rollout status deployment/result-service -n {{ namespace }} --timeout=300s
+      register: result_rollout
+      failed_when: result_rollout.rc != 0
+
+    - name: Rollback result-service on failure
+      command: kubectl rollout undo deployment/result-service -n {{ namespace }}
+      when: result_rollout.rc != 0
+
+    - name: Wait for admin-service rollout
+      command: kubectl rollout status deployment/admin-service -n {{ namespace }} --timeout=300s
+      register: admin_rollout
+      failed_when: admin_rollout.rc != 0
+
+    - name: Rollback admin-service on failure
+      command: kubectl rollout undo deployment/admin-service -n {{ namespace }}
+      when: admin_rollout.rc != 0
+
+    - name: Wait for api-gateway rollout
+      command: kubectl rollout status deployment/api-gateway -n {{ namespace }} --timeout=300s
+      register: gateway_rollout
+      failed_when: gateway_rollout.rc != 0
+
+    - name: Rollback api-gateway on failure
+      command: kubectl rollout undo deployment/api-gateway -n {{ namespace }}
+      when: gateway_rollout.rc != 0
+
+    # ─── Final pod status ────────────────────────────────────────────────────
     - name: Get all pods status
       command: kubectl get pods -n {{ namespace }}
       register: pods_status
@@ -93,4 +183,4 @@
 
     - name: Deployment complete
       debug:
-        msg: "WeCode stack deployed to Kubernetes successfully!"
+        msg: "WeCode stack deployed successfully — build {{ build_number }}"

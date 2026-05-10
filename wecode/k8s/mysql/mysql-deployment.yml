@@ -1,3 +1,5 @@
+---
+# mysql-deployment.yml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,7 +8,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate   # Correct for stateful DB — never run two MySQL pods at once
+    type: Recreate    # Correct for stateful DB — never run two MySQL pods at once
   selector:
     matchLabels:
       app: mysql
@@ -35,11 +37,6 @@ spec:
             - name: mysql-storage
               mountPath: /var/lib/mysql
 
-          # FIX 3: Replaced tcpSocket probe with mysqladmin ping.
-          # tcpSocket succeeds the moment MySQL starts listening on 3306,
-          # but MySQL isn't ready to accept queries yet at that point.
-          # This caused Spring Boot services to fail DB connections on startup.
-          # mysqladmin ping verifies MySQL is actually accepting connections.
           readinessProbe:
             exec:
               command:
@@ -49,7 +46,7 @@ spec:
                 - localhost
                 - -u
                 - root
-                - -p$(MYSQL_ROOT_PASSWORD)
+                - -proot
             initialDelaySeconds: 20
             periodSeconds: 10
             failureThreshold: 6
@@ -64,7 +61,7 @@ spec:
                 - localhost
                 - -u
                 - root
-                - -p$(MYSQL_ROOT_PASSWORD)
+                - -proot
             initialDelaySeconds: 60
             periodSeconds: 20
             failureThreshold: 3
@@ -77,7 +74,8 @@ spec:
             limits:
               memory: "1Gi"
               cpu: "500m"
+
       volumes:
         - name: mysql-storage
           persistentVolumeClaim:
-            claimName: mysql-pvc
+            claimName: mysql-pvc    # matches PVC name above
