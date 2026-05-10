@@ -2,10 +2,6 @@
 # deploy-service-k8s.yml
 # Called when a SINGLE SERVICE pipeline is triggered MANUALLY.
 # Deploys only that one service — other services are untouched.
-#
-# BUG FIX: Original used only kubectl set image which fails on first run
-# if deployment does not exist yet.
-# Now: kubectl apply first (creates if missing), then set image.
 
 - name: Deploy single service to Kubernetes
   hosts: app_servers
@@ -17,7 +13,9 @@
     dockerhub_username: "sivasomanath2502"
     image_tag: "latest"
     service_name: ""
-    namespace: "wecode"
+    # FIX: Renamed from 'namespace' → 'k8s_namespace' to avoid reserved Ansible
+    # variable name collision (same fix as deploy-app-k8s.yml).
+    k8s_namespace: "wecode"
     k8s_dir: "/opt/wecode/k8s"
 
   tasks:
@@ -29,34 +27,29 @@
 
     - name: Show deployment details
       debug:
-        msg: "Deploying {{ service_name }}:{{ image_tag }} to namespace {{ namespace }}"
+        msg: "Deploying {{ service_name }}:{{ image_tag }} to namespace {{ k8s_namespace }}"
 
-    # ─── Ensure namespace exists ──────────────────────────────────────────────
     - name: Ensure namespace exists
       command: kubectl apply -f {{ k8s_dir }}/namespace.yml
       ignore_errors: yes
 
-    # ─── Apply manifests first — idempotent, creates if not exists ───────────
     - name: Apply service manifests
       command: kubectl apply -f {{ k8s_dir }}/{{ service_name }}/
 
-    # ─── Update image tag ────────────────────────────────────────────────────
     - name: Update image for {{ service_name }}
       command: >
         kubectl set image deployment/{{ service_name }}
         {{ service_name }}={{ dockerhub_username }}/{{ service_name }}:{{ image_tag }}
-        -n {{ namespace }}
+        -n {{ k8s_namespace }}
 
-    # ─── Wait for rollout ─────────────────────────────────────────────────────
     - name: Wait for rollout to complete
       command: >
         kubectl rollout status deployment/{{ service_name }}
-        -n {{ namespace }} --timeout=300s
+        -n {{ k8s_namespace }} --timeout=300s
       register: rollout_status
 
-    # ─── Rollback on failure ──────────────────────────────────────────────────
     - name: Rollback {{ service_name }} on failure
-      command: kubectl rollout undo deployment/{{ service_name }} -n {{ namespace }}
+      command: kubectl rollout undo deployment/{{ service_name }} -n {{ k8s_namespace }}
       when: rollout_status.rc != 0
 
     - name: Fail pipeline if rollout failed
@@ -64,9 +57,8 @@
         msg: "Rollout failed for {{ service_name }} — rolled back to previous version"
       when: rollout_status.rc != 0
 
-    # ─── Show result ─────────────────────────────────────────────────────────
     - name: Get pod status for {{ service_name }}
-      command: kubectl get pods -n {{ namespace }} -l app={{ service_name }}
+      command: kubectl get pods -n {{ k8s_namespace }} -l app={{ service_name }}
       register: pod_status
 
     - name: Show pod status

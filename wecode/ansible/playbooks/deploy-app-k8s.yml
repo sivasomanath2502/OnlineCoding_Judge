@@ -1,12 +1,7 @@
 ---
 # deploy-app-k8s.yml
 # Called by ROOT PIPELINE after all service pipelines complete.
-# Deploys ALL services using their respective image tags.
-#
-# BUG FIX: Previously used image_tag=latest hardcoded for everything.
-# Now each service uses its own image with the root build_number as tag.
-# Services that were not rebuilt still have :latest tag from last push.
-# Using imagePullPolicy: Always in K8s manifests ensures correct image is pulled.
+# Deploys ALL services including frontend using build_number as image tag.
 
 - name: Deploy full WeCode stack to Kubernetes
   hosts: app_servers
@@ -16,13 +11,16 @@
     KUBECONFIG: /var/lib/jenkins/.kube/config
   vars:
     dockerhub_username: "sivasomanath2502"
-    build_number: "latest"          # overridden by root pipeline with BUILD_NUMBER
+    build_number: "latest"
     k8s_dir: "/opt/wecode/k8s"
-    namespace: "wecode"
+    # FIX 1: Rename var from 'namespace' to 'k8s_namespace'.
+    # 'namespace' is a reserved Ansible/Jinja2 variable name — using it causes
+    # the "[WARNING]: Found variable using reserved name: namespace" and can
+    # produce subtle failures where the variable is silently ignored.
+    k8s_namespace: "wecode"
 
   tasks:
 
-    # ─── Pre-flight checks ───────────────────────────────────────────────────
     - name: Check kubectl is available
       command: kubectl version --client
       register: kubectl_check
@@ -61,27 +59,43 @@
     - name: Apply Redis manifests
       command: kubectl apply -f {{ k8s_dir }}/redis/
 
-    # ─── Wait for infrastructure to be ready ─────────────────────────────────
+    # ─── Wait for infrastructure ──────────────────────────────────────────────
+    # FIX 2: MySQL was timing out because the pipeline always runs 'kubectl apply'
+    # which can trigger a pod recreation (e.g. after a configmap/secret change).
+    # The old pod gets Terminating while the new one is Pending/Init — the wait
+    # then races against the old pod.
+    # Fix: wait for the OLD pod to fully terminate first, then wait for the new
+    # one to become ready. This prevents the wait from matching a dying pod.
+    - name: Wait for any old MySQL pod to fully terminate
+      command: >
+        kubectl wait pod -l app=mysql -n {{ k8s_namespace }}
+        --for=delete --timeout=120s
+      ignore_errors: yes   # no-op if no pod is being deleted (first run or no change)
+
     - name: Wait for MySQL to be ready
-      command: kubectl wait --for=condition=ready pod -l app=mysql -n {{ namespace }} --timeout=180s
+      command: >
+        kubectl wait --for=condition=ready pod -l app=mysql
+        -n {{ k8s_namespace }} --timeout=300s
       retries: 3
-      delay: 10
+      delay: 15
       register: mysql_wait
       until: mysql_wait.rc == 0
 
     - name: Wait for RabbitMQ to be ready
-      command: kubectl wait --for=condition=ready pod -l app=rabbitmq -n {{ namespace }} --timeout=120s
+      command: >
+        kubectl wait --for=condition=ready pod -l app=rabbitmq
+        -n {{ k8s_namespace }} --timeout=120s
       retries: 3
       delay: 10
       register: rabbitmq_wait
       until: rabbitmq_wait.rc == 0
 
     - name: Wait for Redis to be ready
-      command: kubectl wait --for=condition=ready pod -l app=redis -n {{ namespace }} --timeout=60s
+      command: >
+        kubectl wait --for=condition=ready pod -l app=redis
+        -n {{ k8s_namespace }} --timeout=60s
 
-    # ─── Application services ────────────────────────────────────────────────
-    # BUG FIX: Apply manifests first, then update image tag separately.
-    # kubectl apply is idempotent — safe to run every time.
+    # ─── Application services ─────────────────────────────────────────────────
     - name: Apply application service manifests
       command: "{{ item }}"
       loop:
@@ -90,91 +104,106 @@
         - kubectl apply -f {{ k8s_dir }}/result-service/
         - kubectl apply -f {{ k8s_dir }}/admin-service/
         - kubectl apply -f {{ k8s_dir }}/api-gateway/
+        # FIX 3: frontend manifest was never applied here — added
+        - kubectl apply -f {{ k8s_dir }}/wecode-frontend/
 
-    # ─── Update image tags for all services ─────────────────────────────────
-    # BUG FIX: set image with build_number tag ensures correct version is deployed.
-    # imagePullPolicy: Always in manifests ensures K8s pulls latest matching tag.
+    # ─── Update image tags ────────────────────────────────────────────────────
     - name: Update image tag — submission-service
       command: >
         kubectl set image deployment/submission-service
         submission-service={{ dockerhub_username }}/submission-service:{{ build_number }}
-        -n {{ namespace }}
+        -n {{ k8s_namespace }}
 
     - name: Update image tag — worker-service
       command: >
         kubectl set image deployment/worker-service
         worker-service={{ dockerhub_username }}/worker-service:{{ build_number }}
-        -n {{ namespace }}
+        -n {{ k8s_namespace }}
 
     - name: Update image tag — result-service
       command: >
         kubectl set image deployment/result-service
         result-service={{ dockerhub_username }}/result-service:{{ build_number }}
-        -n {{ namespace }}
+        -n {{ k8s_namespace }}
 
     - name: Update image tag — admin-service
       command: >
         kubectl set image deployment/admin-service
         admin-service={{ dockerhub_username }}/admin-service:{{ build_number }}
-        -n {{ namespace }}
+        -n {{ k8s_namespace }}
 
     - name: Update image tag — api-gateway
       command: >
         kubectl set image deployment/api-gateway
         api-gateway={{ dockerhub_username }}/api-gateway:{{ build_number }}
-        -n {{ namespace }}
+        -n {{ k8s_namespace }}
 
-    # ─── Rolling update health checks ────────────────────────────────────────
-    # Wait for each service rollout to complete.
-    # On failure, rollback automatically.
+    # FIX 3 (cont): update frontend image tag in the rollout
+    - name: Update image tag — wecode-frontend
+      command: >
+        kubectl set image deployment/wecode-frontend
+        wecode-frontend={{ dockerhub_username }}/wecode-frontend:{{ build_number }}
+        -n {{ k8s_namespace }}
+
+    # ─── Wait for rollouts ────────────────────────────────────────────────────
     - name: Wait for submission-service rollout
-      command: kubectl rollout status deployment/submission-service -n {{ namespace }} --timeout=300s
+      command: kubectl rollout status deployment/submission-service -n {{ k8s_namespace }} --timeout=300s
       register: submission_rollout
       failed_when: submission_rollout.rc != 0
 
     - name: Rollback submission-service on failure
-      command: kubectl rollout undo deployment/submission-service -n {{ namespace }}
+      command: kubectl rollout undo deployment/submission-service -n {{ k8s_namespace }}
       when: submission_rollout.rc != 0
 
     - name: Wait for worker-service rollout
-      command: kubectl rollout status deployment/worker-service -n {{ namespace }} --timeout=300s
+      command: kubectl rollout status deployment/worker-service -n {{ k8s_namespace }} --timeout=300s
       register: worker_rollout
       failed_when: worker_rollout.rc != 0
 
     - name: Rollback worker-service on failure
-      command: kubectl rollout undo deployment/worker-service -n {{ namespace }}
+      command: kubectl rollout undo deployment/worker-service -n {{ k8s_namespace }}
       when: worker_rollout.rc != 0
 
     - name: Wait for result-service rollout
-      command: kubectl rollout status deployment/result-service -n {{ namespace }} --timeout=300s
+      command: kubectl rollout status deployment/result-service -n {{ k8s_namespace }} --timeout=300s
       register: result_rollout
       failed_when: result_rollout.rc != 0
 
     - name: Rollback result-service on failure
-      command: kubectl rollout undo deployment/result-service -n {{ namespace }}
+      command: kubectl rollout undo deployment/result-service -n {{ k8s_namespace }}
       when: result_rollout.rc != 0
 
     - name: Wait for admin-service rollout
-      command: kubectl rollout status deployment/admin-service -n {{ namespace }} --timeout=300s
+      command: kubectl rollout status deployment/admin-service -n {{ k8s_namespace }} --timeout=300s
       register: admin_rollout
       failed_when: admin_rollout.rc != 0
 
     - name: Rollback admin-service on failure
-      command: kubectl rollout undo deployment/admin-service -n {{ namespace }}
+      command: kubectl rollout undo deployment/admin-service -n {{ k8s_namespace }}
       when: admin_rollout.rc != 0
 
     - name: Wait for api-gateway rollout
-      command: kubectl rollout status deployment/api-gateway -n {{ namespace }} --timeout=300s
+      command: kubectl rollout status deployment/api-gateway -n {{ k8s_namespace }} --timeout=300s
       register: gateway_rollout
       failed_when: gateway_rollout.rc != 0
 
     - name: Rollback api-gateway on failure
-      command: kubectl rollout undo deployment/api-gateway -n {{ namespace }}
+      command: kubectl rollout undo deployment/api-gateway -n {{ k8s_namespace }}
       when: gateway_rollout.rc != 0
 
-    # ─── Final pod status ────────────────────────────────────────────────────
+    # FIX 3 (cont): wait for frontend rollout
+    - name: Wait for wecode-frontend rollout
+      command: kubectl rollout status deployment/wecode-frontend -n {{ k8s_namespace }} --timeout=120s
+      register: frontend_rollout
+      failed_when: frontend_rollout.rc != 0
+
+    - name: Rollback wecode-frontend on failure
+      command: kubectl rollout undo deployment/wecode-frontend -n {{ k8s_namespace }}
+      when: frontend_rollout.rc != 0
+
+    # ─── Final status ─────────────────────────────────────────────────────────
     - name: Get all pods status
-      command: kubectl get pods -n {{ namespace }}
+      command: kubectl get pods -n {{ k8s_namespace }}
       register: pods_status
 
     - name: Show pod status

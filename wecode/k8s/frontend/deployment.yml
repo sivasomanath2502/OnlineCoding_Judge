@@ -1,3 +1,11 @@
+# wecode-frontend/deployment.yml
+# FIX 1: Added RollingUpdate strategy (was missing entirely — K8s defaults to
+#         RollingUpdate but without explicit config the behaviour is unpredictable
+#         on resource-constrained nodes; maxSurge:0 matches all other services).
+# FIX 2: Added startupProbe + livenessProbe (only readinessProbe existed).
+# FIX 3: Fixed health check path — nginx serves static files; /health returns 404.
+#         Use / instead, which nginx always serves with 200 for the SPA root.
+# FIX 4: Added resource requests to match other services style.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -5,6 +13,12 @@ metadata:
   namespace: wecode
 spec:
   replicas: 1
+  # FIX 1: Explicit rolling update strategy — matches all backend services
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0        # Never spin up extra pods beyond replica count
+      maxUnavailable: 1  # Take down old pod first, then bring up new one
   selector:
     matchLabels:
       app: wecode-frontend
@@ -19,12 +33,37 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 80
+
+          # FIX 2+3: startupProbe — give nginx time to start, check / not /health
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+            failureThreshold: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+
+          # FIX 3: readinessProbe path was /health — nginx returns 404 for that.
+          # Use / which always returns 200 for the SPA index.html.
           readinessProbe:
             httpGet:
-              path: /health
+              path: /
               port: 80
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 3
+
+          # FIX 2: livenessProbe was missing entirely
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+            timeoutSeconds: 3
+
           resources:
             requests:
               memory: "64Mi"
