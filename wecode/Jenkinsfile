@@ -158,14 +158,12 @@ pipeline {
             }
         }
 
-        // ─── Stage 4: Deploy all services via Ansible ────────────────────────
-        // Root pipeline owns the final K8s deploy of ALL services including frontend.
         stage('Deploy All Services to Kubernetes') {
             steps {
                 dir('wecode/ansible') {
                     sh """
                         ansible-playbook playbooks/deploy-app-k8s.yml \
-                            -e "build_number=${BUILD_NUMBER}" \
+                            -e "build_number=latest" \
                             -e "dockerhub_username=${DOCKERHUB_USERNAME}" \
                             -e "k8s_namespace=${NAMESPACE}"
                     """
