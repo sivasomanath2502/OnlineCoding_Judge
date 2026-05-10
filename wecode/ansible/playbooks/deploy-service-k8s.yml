@@ -1,4 +1,9 @@
 ---
+# FIX: Increased rollout timeout from 180s to 300s.
+# Spring Boot JVM startup + readiness probe warmup can easily exceed 180s
+# on constrained nodes, causing false-negative pipeline failures even when
+# the service is healthy and just slow to start.
+
 - name: Deploy single service to Kubernetes
   hosts: app_servers
   connection: local
@@ -15,28 +20,35 @@
       fail:
         msg: "service_name must be provided"
       when: service_name == ""
+
     - name: Show what we are deploying
       debug:
         msg: "Deploying {{ service_name }}:{{ image_tag }} to namespace {{ namespace }}"
+
     - name: Update image for {{ service_name }}
       command: >
         kubectl set image deployment/{{ service_name }}
         {{ service_name }}={{ dockerhub_username }}/{{ service_name }}:{{ image_tag }}
         -n {{ namespace }}
+
     - name: Wait for rollout to complete
       command: >
         kubectl rollout status deployment/{{ service_name }}
-        -n {{ namespace }} --timeout=180s
+        -n {{ namespace }} --timeout=300s
       register: rollout_status
+
     - name: Show rollout status
       debug:
         msg: "{{ rollout_status.stdout }}"
+
     - name: Get pod status for {{ service_name }}
       command: kubectl get pods -n {{ namespace }} -l app={{ service_name }}
       register: pod_status
+
     - name: Show pod status
       debug:
         msg: "{{ pod_status.stdout_lines }}"
+
     - name: Done
       debug:
         msg: "{{ service_name }}:{{ image_tag }} is live in Kubernetes"

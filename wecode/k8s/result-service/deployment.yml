@@ -5,6 +5,14 @@ metadata:
   namespace: wecode
 spec:
   replicas: 2
+  # FIX 1: maxSurge: 0 prevents a 3rd pod being created during rollout.
+  # Without this, K8s tries to bring up a new pod BEFORE killing old ones,
+  # which exhausts node resources and causes the 180s rollout timeout failure.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0        # Never create extra pods beyond replica count
+      maxUnavailable: 1  # Kill one old pod first, then replace it
   selector:
     matchLabels:
       app: result-service
@@ -36,7 +44,9 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8083
-            initialDelaySeconds: 10
+            # FIX 2: Increased from 10s to 30s — JVM needs more warmup time
+            # before it can reliably serve the health endpoint
+            initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 6
             timeoutSeconds: 5
@@ -45,7 +55,7 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8083
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 20
             failureThreshold: 3
             timeoutSeconds: 5

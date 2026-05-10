@@ -5,6 +5,14 @@ metadata:
   namespace: wecode
 spec:
   replicas: 1
+  # FIX 1: Explicit strategy — currently admin-service has replicas:1,
+  # but adding this prevents issues if you scale it up later,
+  # and makes all deployments consistent.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: admin-service
@@ -36,7 +44,8 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8084
-            initialDelaySeconds: 10
+            # FIX 2: Increased from 10s to 30s — JVM needs more warmup time
+            initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 6
             timeoutSeconds: 5
@@ -45,7 +54,7 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8084
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 20
             failureThreshold: 3
             timeoutSeconds: 5

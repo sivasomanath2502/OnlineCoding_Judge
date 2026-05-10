@@ -1,4 +1,7 @@
 ---
+# FIX: Increased all rollout timeouts from 180s to 300s.
+# Spring Boot services need more time to start on constrained nodes.
+
 - name: Deploy full WeCode stack to Kubernetes
   hosts: app_servers
   connection: local
@@ -15,36 +18,48 @@
       command: kubectl version --client
       register: kubectl_check
       changed_when: false
+
     - name: Ensure k8s directory exists on server
       file:
         path: "{{ k8s_dir }}"
         state: directory
         mode: '0755'
+
     - name: Copy k8s manifests to server
       copy:
         src: "../../k8s/"
         dest: "{{ k8s_dir }}/"
         mode: '0644'
+
     - name: Apply namespace
       command: kubectl apply -f {{ k8s_dir }}/namespace.yml
+
     - name: Apply ConfigMap
       command: kubectl apply -f {{ k8s_dir }}/configmap.yml
+
     - name: Apply Secrets
       command: kubectl apply -f {{ k8s_dir }}/secret.yml
+
     - name: Apply infrastructure
       command: "{{ item }}"
       loop:
         - kubectl apply -f {{ k8s_dir }}/mysql/
         - kubectl apply -f {{ k8s_dir }}/rabbitmq/
         - kubectl apply -f {{ k8s_dir }}/redis/
+
     - name: Wait for MySQL
-      command: kubectl wait --for=condition=ready pod -l app=mysql -n {{ namespace }} --timeout=120s
+      # FIX: Increased timeout from 120s to 180s — mysqladmin ping probe
+      # takes longer than tcpSocket to pass since it waits for real readiness
+      command: kubectl wait --for=condition=ready pod -l app=mysql -n {{ namespace }} --timeout=180s
       retries: 3
       delay: 10
+
     - name: Wait for RabbitMQ
-      command: kubectl wait --for=condition=ready pod -l app=rabbitmq -n {{ namespace }} --timeout=90s
+      command: kubectl wait --for=condition=ready pod -l app=rabbitmq -n {{ namespace }} --timeout=120s
+
     - name: Wait for Redis
       command: kubectl wait --for=condition=ready pod -l app=redis -n {{ namespace }} --timeout=60s
+
     - name: Apply application services
       command: "{{ item }}"
       loop:
@@ -54,20 +69,28 @@
         - kubectl apply -f {{ k8s_dir }}/admin-service/
         - kubectl apply -f {{ k8s_dir }}/api-gateway/
         - kubectl apply -f {{ k8s_dir }}/frontend/
+
     - name: Wait for API Gateway
-      command: kubectl wait --for=condition=ready pod -l app=api-gateway -n {{ namespace }} --timeout=180s
+      # FIX: Increased timeout from 180s to 300s
+      command: kubectl wait --for=condition=ready pod -l app=api-gateway -n {{ namespace }} --timeout=300s
       retries: 3
       delay: 15
+
     - name: Wait for submission-service
-      command: kubectl wait --for=condition=ready pod -l app=submission-service -n {{ namespace }} --timeout=120s
+      # FIX: Increased timeout from 120s to 300s
+      command: kubectl wait --for=condition=ready pod -l app=submission-service -n {{ namespace }} --timeout=300s
+
     - name: Wait for frontend
       command: kubectl wait --for=condition=ready pod -l app=wecode-frontend -n {{ namespace }} --timeout=60s
+
     - name: Get all pods status
       command: kubectl get pods -n {{ namespace }}
       register: pods_status
+
     - name: Show pod status
       debug:
         msg: "{{ pods_status.stdout_lines }}"
+
     - name: Deployment complete
       debug:
         msg: "WeCode stack deployed to Kubernetes successfully!"

@@ -5,6 +5,8 @@ metadata:
   namespace: wecode
 spec:
   replicas: 1
+  strategy:
+    type: Recreate   # Correct for stateful DB — never run two MySQL pods at once
   selector:
     matchLabels:
       app: mysql
@@ -32,17 +34,42 @@ spec:
           volumeMounts:
             - name: mysql-storage
               mountPath: /var/lib/mysql
+
+          # FIX 3: Replaced tcpSocket probe with mysqladmin ping.
+          # tcpSocket succeeds the moment MySQL starts listening on 3306,
+          # but MySQL isn't ready to accept queries yet at that point.
+          # This caused Spring Boot services to fail DB connections on startup.
+          # mysqladmin ping verifies MySQL is actually accepting connections.
           readinessProbe:
-            tcpSocket:
-              port: 3306
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+                - -u
+                - root
+                - -p$(MYSQL_ROOT_PASSWORD)
             initialDelaySeconds: 20
             periodSeconds: 10
             failureThreshold: 6
+            timeoutSeconds: 5
+
           livenessProbe:
-            tcpSocket:
-              port: 3306
-            initialDelaySeconds: 30
-            periodSeconds: 15
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+                - -u
+                - root
+                - -p$(MYSQL_ROOT_PASSWORD)
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
+            timeoutSeconds: 5
+
           resources:
             requests:
               memory: "512Mi"
