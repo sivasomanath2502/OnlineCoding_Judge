@@ -40,16 +40,7 @@ pipeline {
                     env.BUILD_RESULT     = changedFiles.contains('result-service')        ? 'true' : 'false'
                     env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')           ? 'true' : 'false'
                     env.BUILD_ADMIN      = changedFiles.contains('admin-service')         ? 'true' : 'false'
-                    env.BUILD_FRONTEND   = changedFiles.contains('wecode-frontend')       ? 'true' : 'false'
-
-                    env.ANY_BUILD = (
-                        env.BUILD_SUBMISSION == 'true' ||
-                        env.BUILD_WORKER     == 'true' ||
-                        env.BUILD_RESULT     == 'true' ||
-                        env.BUILD_GATEWAY    == 'true' ||
-                        env.BUILD_ADMIN      == 'true' ||
-                        env.BUILD_FRONTEND   == 'true'
-                    ) ? 'true' : 'false'
+                    env.BUILD_FRONTEND   = changedFiles.contains('wecode-frontend') ? 'true' : 'false'
 
                     echo """
                     ============ Build Flags ============
@@ -58,9 +49,7 @@ pipeline {
                       result-service       : ${env.BUILD_RESULT}
                       api-gateway          : ${env.BUILD_GATEWAY}
                       admin-service        : ${env.BUILD_ADMIN}
-                      wecode-frontend      : ${env.BUILD_FRONTEND}
-                    ─────────────────────────────────────
-                      any build triggered  : ${env.ANY_BUILD}
+                      wecode-frontend: ${env.BUILD_FRONTEND}
                     =====================================
                     """
                 }
@@ -106,16 +95,13 @@ pipeline {
                     if (!parallelJobs.isEmpty()) {
                         parallel parallelJobs
                     } else {
-                        echo "No service changes — skipping all builds."
+                        echo "No service changes — skipping builds, proceeding to deploy."
                     }
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
-            when {
-                expression { env.ANY_BUILD == 'true' }
-            }
             steps {
                 dir('wecode/ansible') {
                     sh """
