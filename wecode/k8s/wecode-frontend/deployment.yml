@@ -17,7 +17,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 0        # Never spin up extra pods beyond replica count
+      maxSurge: 1        # Never spin up extra pods beyond replica count
       maxUnavailable: 0  # Take down old pod first, then bring up new one
   selector:
     matchLabels:
