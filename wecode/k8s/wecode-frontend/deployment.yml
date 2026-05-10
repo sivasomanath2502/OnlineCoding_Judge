@@ -18,7 +18,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 0        # Never spin up extra pods beyond replica count
-      maxUnavailable: 1  # Take down old pod first, then bring up new one
+      maxUnavailable: 0  # Take down old pod first, then bring up new one
   selector:
     matchLabels:
       app: wecode-frontend

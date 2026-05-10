@@ -12,7 +12,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 0        # Never create extra pods beyond replica count
-      maxUnavailable: 1  # Kill one old pod first, then replace it
+      maxUnavailable: 0 # Kill one old pod first, then replace it
   selector:
     matchLabels:
       app: api-gateway

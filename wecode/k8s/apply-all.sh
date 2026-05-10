@@ -46,7 +46,7 @@ kubectl apply -f worker-service/
 kubectl apply -f result-service/
 kubectl apply -f admin-service/
 kubectl apply -f api-gateway/
-kubectl apply -f frontend/
+kubectl apply -f wecode-frontend/
 
 # ─── Step 6: Wait for services ───────────────────────────────────────────────
 echo "⏳ Waiting for services to be ready..."
