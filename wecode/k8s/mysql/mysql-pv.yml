@@ -1,8 +1,4 @@
 ---
-# mysql-pv.yml
-# BUG FIX: Added PersistentVolume with Retain policy.
-# Without PV, PVC stays Pending on Minikube with no storageClass defined.
-# Retain policy ensures data survives namespace deletion.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -14,4 +10,4 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: /data/mysql    # stored on minikube node filesystem
+    path: /data/mysql

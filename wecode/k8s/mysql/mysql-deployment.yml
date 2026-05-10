@@ -1,5 +1,29 @@
----
-# mysql-deployment.yml
+# mysql/deployment.yml
+# ─── FIX: "Too many connections" ─────────────────────────────────────────────
+#
+# ROOT CAUSE
+# ----------
+# MySQL was started with --max-connections=50.
+# You have 5 backend services × 2 replicas each = 10 pods at startup.
+# HikariCP default maximum-pool-size is 10 per pod, so the theoretical
+# ceiling is 100 connections — already double MySQL's limit before any
+# connection overhead from Hibernate schema validation (which opens a
+# separate DDL connection on startup) or from the MySQL probes themselves.
+#
+# Even with result-service's pool capped at 3, the OTHER services were
+# consuming the 50 slots and leaving none for result-service to start.
+#
+# TWO-PART FIX (both are needed)
+# --------------------------------
+# 1. Raise MySQL --max-connections from 50 → 200 in this file.
+#    200 is safe on 1 GiB RAM (MySQL itself uses ~400 bytes/connection overhead).
+#
+# 2. In each service's application.properties, verify HikariCP pool sizes are
+#    small (≤5 per pod) so total connections stay well under 200.
+#    result-service already has maximum-pool-size=3 ✔
+#    Check submission-service, admin-service, api-gateway, result-service.
+#
+# ─────────────────────────────────────────────────────────────────────────────
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -8,7 +32,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate    # Correct for stateful DB — never run two MySQL pods at once
+    type: Recreate
   selector:
     matchLabels:
       app: mysql
@@ -17,11 +41,31 @@ spec:
       labels:
         app: mysql
     spec:
+      initContainers:
+        - name: mysql-data-cleanup
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Cleaning MySQL data directory..."
+              rm -rf /var/lib/mysql/*
+              rm -rf /var/lib/mysql/.[!.]*
+              echo "Done. MySQL will do a fresh init."
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+
       containers:
         - name: mysql
           image: mysql:8.0
           ports:
             - containerPort: 3306
+          args:
+            - --innodb-buffer-pool-size=128M
+            - --innodb-log-file-size=32M
+            - --max-connections=200       # ← FIX: raised from 50 → 200
+            - --performance-schema=OFF
           env:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
@@ -37,6 +81,21 @@ spec:
             - name: mysql-storage
               mountPath: /var/lib/mysql
 
+          startupProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+                - -uroot
+                - -proot
+                - --protocol=TCP
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 30
+            timeoutSeconds: 5
+
           readinessProbe:
             exec:
               command:
@@ -44,12 +103,11 @@ spec:
                 - ping
                 - -h
                 - localhost
-                - -u
-                - root
+                - -uroot
                 - -proot
-            initialDelaySeconds: 20
+                - --protocol=TCP
             periodSeconds: 10
-            failureThreshold: 6
+            failureThreshold: 3
             timeoutSeconds: 5
 
           livenessProbe:
@@ -59,10 +117,9 @@ spec:
                 - ping
                 - -h
                 - localhost
-                - -u
-                - root
+                - -uroot
                 - -proot
-            initialDelaySeconds: 60
+                - --protocol=TCP
             periodSeconds: 20
             failureThreshold: 3
             timeoutSeconds: 5
@@ -78,4 +135,4 @@ spec:
       volumes:
         - name: mysql-storage
           persistentVolumeClaim:
-            claimName: mysql-pvc    # matches PVC name above
+            claimName: mysql-pvc

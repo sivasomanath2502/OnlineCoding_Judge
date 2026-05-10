@@ -1,12 +1,8 @@
 ---
-# mysql-pvc.yml
-# BUG FIX: Name changed from 'pvc' to 'mysql-pvc'.
-# MySQL deployment volumeMounts references claimName: mysql-pvc.
-# Name mismatch caused MySQL pod to stay in Pending state permanently.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: mysql-pvc           # BUG FIX: was 'pvc' — must match mysql deployment claimName
+  name: mysql-pvc
   namespace: wecode
 spec:
   accessModes:
