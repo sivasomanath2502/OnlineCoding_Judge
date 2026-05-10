@@ -47,9 +47,7 @@
 			<optional>true</optional>
 		</dependency>
 
-		<!-- FIX: Removed duplicate spring-boot-starter-actuator declaration.
-		     Maven warned: 'dependencies.dependency must be unique: actuator -> duplicate declaration'
-		     This will break in future Maven versions. Only one declaration kept here. -->
+		<!-- Actuator -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
@@ -68,6 +66,11 @@
 			<artifactId>spring-boot-starter-data-redis-reactive</artifactId>
 		</dependency>
 
+		<!-- Actuator for health aggregation -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
