@@ -9,5 +9,8 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: wecode
+    name: mysql-pvc
   hostPath:
     path: /data/mysql

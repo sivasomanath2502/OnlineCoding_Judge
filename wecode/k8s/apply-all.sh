@@ -6,10 +6,20 @@ set -e
 
 echo "🚀 Deploying WeCode to Kubernetes..."
 
-# ─── Step 0: Clean MySQL hostPath on Minikube node ──────────────────────────
-echo "🧹 Cleaning MySQL data directory on Minikube node..."
-minikube ssh "sudo rm -rf /data/mysql && sudo mkdir -p /data/mysql && sudo chmod 777 /data/mysql"
-echo "✅ MySQL data directory cleaned."
+# ─── Step 0a: MySQL hostPath — ensure exists, NEVER auto-wipe ────────────────
+# Data persists across deploys. To wipe intentionally, run:
+#   CLEAN_MYSQL=true bash apply-all.sh
+CLEAN_MYSQL="${CLEAN_MYSQL:-false}"
+
+if [ "$CLEAN_MYSQL" = "true" ]; then
+  echo "🧹 CLEAN_MYSQL=true — wiping MySQL data directory on Minikube node..."
+  minikube ssh "sudo rm -rf /data/mysql && sudo mkdir -p /data/mysql && sudo chmod 777 /data/mysql"
+  echo "✅ MySQL data directory wiped and recreated."
+else
+  echo "📁 Ensuring MySQL data directory exists (data preserved)..."
+  minikube ssh "sudo mkdir -p /data/mysql && sudo chmod 777 /data/mysql"
+  echo "✅ MySQL data directory ready."
+fi
 
 # ─── Step 0b: Ensure Elasticsearch hostPath exists (never wipe) ──────────────
 # We do NOT wipe ES data — logs must persist across restarts.
@@ -18,8 +28,21 @@ echo "📁 Ensuring Elasticsearch data directory exists..."
 minikube ssh "sudo mkdir -p /data/elasticsearch && sudo chmod 777 /data/elasticsearch"
 echo "✅ Elasticsearch data directory ready."
 
-# ─── Step 1: Namespace ───────────────────────────────────────────────────────
+# ─── Step 1a: Namespace ───────────────────────────────────────────────────────
 kubectl apply -f namespace.yml
+
+# ─── Step 1b: Reset Released PVs so they can rebind ─────────────────────────
+# After namespace deletion, PVs with Retain policy go to "Released".
+# Kubernetes won't rebind a Released PV until claimRef is cleared.
+# This patches out the UID (not the whole claimRef) so the PV becomes
+# Available again and rebinds to the same mysql-pvc.
+PV_PHASE=$(kubectl get pv mysql-pv -o jsonpath='{.status.phase}' 2>/dev/null || echo "NotFound")
+if [ "$PV_PHASE" = "Released" ]; then
+  echo "🔄 mysql-pv is Released — clearing claimRef.uid so it can rebind..."
+  kubectl patch pv mysql-pv --type=json \
+    -p='[{"op":"remove","path":"/spec/claimRef/uid"},{"op":"remove","path":"/spec/claimRef/resourceVersion"}]'
+  echo "✅ mysql-pv reset to Available."
+fi
 
 # ─── Step 2: ConfigMap and Secrets ───────────────────────────────────────────
 kubectl apply -f configmap.yml

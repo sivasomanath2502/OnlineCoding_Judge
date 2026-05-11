@@ -85,6 +85,18 @@
     - name: Apply namespace
       command: kubectl apply -f {{ k8s_dir }}/namespace.yml
 
+    - name: Check mysql-pv phase
+      command: kubectl get pv mysql-pv -o jsonpath='{.status.phase}'
+      register: mysql_pv_phase
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Reset Released mysql-pv so it can rebind to mysql-pvc
+      command: >
+        kubectl patch pv mysql-pv --type=json
+        -p='[{"op":"remove","path":"/spec/claimRef/uid"},{"op":"remove","path":"/spec/claimRef/resourceVersion"}]'
+      when: mysql_pv_phase.stdout == "Released"
+
     - name: Apply ConfigMap
       command: kubectl apply -f {{ k8s_dir }}/configmap.yml
 
