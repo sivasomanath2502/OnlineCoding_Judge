@@ -42,13 +42,12 @@
 
     # ─── Step 0: MySQL hostPath cleanup (only when clean_mysql=true) ──────────
     - name: Clean MySQL data directory (only when clean_mysql=true)
-      when: clean_mysql | default(false) | bool
+      when: clean_mysql | bool
       shell: |
         sudo rm -rf /data/mysql
         sudo mkdir -p /data/mysql
         sudo chmod 777 /data/mysql
       changed_when: true
-      when: clean_mysql | bool
 
     # ─── Step 0b: Elasticsearch hostPath — ensure exists, never wipe ──────────
     # Logs must persist across pipeline runs — only mkdir, never rm -rf
