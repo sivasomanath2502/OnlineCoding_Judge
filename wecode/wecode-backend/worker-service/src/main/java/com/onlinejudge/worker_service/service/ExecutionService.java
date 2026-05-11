@@ -32,7 +32,7 @@ public class ExecutionService {
     private String tempBaseDir;
 
     // Path on HOST machine (for docker -v mount passed to gcc/python/java container)
-    @Value("${execution.host.temp.dir:/var/judge}")
+    @Value("${execution.host.temp.dir:/tmp/judge}")
     private String hostTempBaseDir;
 
     public ExecutionResult execute(Submission submission,

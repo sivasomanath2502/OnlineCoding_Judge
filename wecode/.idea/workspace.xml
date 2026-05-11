@@ -6,8 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/admin-service/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/admin-service/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/configmap.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/configmap.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wecode-backend/worker-service/src/main/java/com/onlinejudge/worker_service/service/ExecutionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/worker-service/src/main/java/com/onlinejudge/worker_service/service/ExecutionService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wecode-backend/worker-service/src/main/resources/application-docker.properties" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/worker-service/src/main/resources/application-docker.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wecode-backend/worker-service/src/main/resources/application-local.properties" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/worker-service/src/main/resources/application-local.properties" afterDir="false" />
