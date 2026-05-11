@@ -4,7 +4,7 @@ metadata:
   name: admin-service
   namespace: wecode
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:

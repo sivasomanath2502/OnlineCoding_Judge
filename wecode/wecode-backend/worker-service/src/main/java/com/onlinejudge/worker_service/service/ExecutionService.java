@@ -32,7 +32,7 @@ public class ExecutionService {
     private String tempBaseDir;
 
     // Path on HOST machine (for docker -v mount passed to gcc/python/java container)
-    @Value("${execution.host.temp.dir:/tmp/judge}")
+    @Value("${execution.host.temp.dir:/var/judge}")
     private String hostTempBaseDir;
 
     public ExecutionResult execute(Submission submission,
@@ -167,7 +167,7 @@ public class ExecutionService {
                 "-v", hostPath + ":/code",
                 "-w", "/code",
                 dockerImage,
-                "sh", "-c", compileCmd   // use full compileCmd as-is from DB
+                "sh", "-c", compileCmd   // use-full compileCmd as-is from DB
         ));
 
         ProcessBuilder pb = new ProcessBuilder(command);
