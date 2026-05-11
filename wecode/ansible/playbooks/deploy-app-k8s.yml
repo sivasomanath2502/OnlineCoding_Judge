@@ -44,9 +44,7 @@
     - name: Clean MySQL data directory (only when clean_mysql=true)
       when: clean_mysql | bool
       shell: |
-        sudo rm -rf /data/mysql
-        sudo mkdir -p /data/mysql
-        sudo chmod 777 /data/mysql
+        minikube ssh "sudo rm -rf /data/mysql && sudo mkdir -p /data/mysql && sudo chmod 777 /data/mysql"
       changed_when: true
 
     # ─── Step 0b: Elasticsearch hostPath — ensure exists, never wipe ──────────
