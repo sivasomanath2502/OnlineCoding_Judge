@@ -42,12 +42,15 @@
 
     # ─── Step 0: MySQL hostPath cleanup (only when clean_mysql=true) ──────────
     - name: Clean MySQL data directory (only when clean_mysql=true)
-      when: clean_mysql | bool
       shell: |
-        sudo rm -rf /data/mysql && sudo mkdir -p /data/mysql && sudo chmod 777 /data/mysql
+        sudo rm -rf /data/mysql
+        sudo mkdir -p /data/mysql
+        sudo chmod 777 /data/mysql
       changed_when: true
+      when: clean_mysql | bool
 
     # ─── Step 0b: Elasticsearch hostPath — ensure exists, never wipe ──────────
+    # Logs must persist across pipeline runs — only mkdir, never rm -rf
     - name: Ensure Elasticsearch data directory exists on host
       shell: |
         sudo mkdir -p /data/elasticsearch
@@ -88,54 +91,21 @@
     - name: Apply Secrets
       command: kubectl apply -f {{ k8s_dir }}/secret.yml
 
-    # ─── Step 4: MySQL — safe PV/PVC handling (immutable field protection) ────
+    # ─── Step 4: Infrastructure ───────────────────────────────────────────────
+    - name: Apply MySQL manifests
+      command: kubectl apply -f {{ k8s_dir }}/mysql/
 
-    - name: Apply MySQL PersistentVolume (create only if missing)
-      shell: |
-        kubectl get pv mysql-pv > /dev/null 2>&1 || \
-        kubectl apply -f {{ k8s_dir }}/mysql/mysql-pv.yml
-      changed_when: false
-
-    - name: Check existing MySQL PVC storageClassName
-      shell: |
-        kubectl get pvc mysql-pvc -n {{ k8s_namespace }} \
-          -o jsonpath='{.spec.storageClassName}' 2>/dev/null || echo "missing"
-      register: existing_pvc_storage_class
-      changed_when: false
-
-    - name: Delete MySQL PVC if storageClassName mismatch (data safe — PV uses Retain)
-      shell: |
-        kubectl delete pvc mysql-pvc -n {{ k8s_namespace }} --ignore-not-found=true
-        sleep 5
-      when: >
-        existing_pvc_storage_class.stdout != "manual" and
-        existing_pvc_storage_class.stdout != "missing"
-      changed_when: true
-
-    - name: Apply MySQL PVC (create only if missing)
-      shell: |
-        kubectl get pvc mysql-pvc -n {{ k8s_namespace }} > /dev/null 2>&1 || \
-        kubectl apply -f {{ k8s_dir }}/mysql/mysql-pvc.yml
-      changed_when: false
-
-    - name: Apply MySQL Deployment and Service
-      command: kubectl apply -f {{ k8s_dir }}/mysql/mysql-deployment.yml
-
-    - name: Apply MySQL Service
-      command: kubectl apply -f {{ k8s_dir }}/mysql/mysql-service.yml
-
-    # ─── Step 5: RabbitMQ and Redis ───────────────────────────────────────────
     - name: Apply RabbitMQ manifests
       command: kubectl apply -f {{ k8s_dir }}/rabbitmq/
 
     - name: Apply Redis manifests
       command: kubectl apply -f {{ k8s_dir }}/redis/
 
-    # ─── Step 6: ELK Stack ────────────────────────────────────────────────────
+    # ─── Step 5: ELK Stack ────────────────────────────────────────────────────
     - name: Apply ELK manifests
       command: kubectl apply -f {{ k8s_dir }}/elk/
 
-    # ─── Step 7: Wait for infrastructure ─────────────────────────────────────
+    # ─── Step 6: Wait for infrastructure ─────────────────────────────────────
     - name: Check if MySQL pod is running
       command: >
         kubectl get pods -l app=mysql -n {{ k8s_namespace }}
@@ -174,7 +144,7 @@
         kubectl wait --for=condition=ready pod -l app=redis
         -n {{ k8s_namespace }} --timeout=60s
 
-    # ─── Step 8: Wait for ELK ────────────────────────────────────────────────
+    # ─── Step 7: Wait for ELK ────────────────────────────────────────────────
     - name: Wait for Elasticsearch to be ready
       command: >
         kubectl wait --for=condition=ready pod -l app=elasticsearch
@@ -199,19 +169,19 @@
         -n {{ k8s_namespace }} --timeout=300s
       ignore_errors: yes
 
-    # ─── Step 9: Apply all app manifests ─────────────────────────────────────
+    # ─── Step 8: Apply all app manifests ─────────────────────────────────────
     - name: Apply manifests for {{ item }}
       command: kubectl apply -f {{ k8s_dir }}/{{ item }}/
       loop: "{{ app_services }}"
 
-    # ─── Step 10: Roll each service ONE AT A TIME ─────────────────────────────
+    # ─── Step 9: Roll each service ONE AT A TIME ──────────────────────────────
     - name: Roll out {{ item }} sequentially
       include_tasks: tasks/roll-service.yml
       loop: "{{ app_services }}"
       loop_control:
         loop_var: service_name
 
-    # ─── Step 11: Final status ────────────────────────────────────────────────
+    # ─── Step 10: Final status ────────────────────────────────────────────────
     - name: Get all pods status
       command: kubectl get pods -n {{ k8s_namespace }}
       register: pods_status
