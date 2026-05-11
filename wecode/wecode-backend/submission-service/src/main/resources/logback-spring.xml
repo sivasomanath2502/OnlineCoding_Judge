@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- ─── Console appender - human-readable for local dev ──────── -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ─── Logstash appender — structured JSON to ELK ──────────── -->
+    <springProfile name="docker,kubernetes">
+        <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+            <destination>${LOGSTASH_HOST:-logstash}:${LOGSTASH_PORT:-5000}</destination>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <customFields>{"service_name":"submission-service","environment":"docker"}</customFields>
+                <includeMdcKeyName>submissionId</includeMdcKeyName>
+                <includeMdcKeyName>userId</includeMdcKeyName>
+                <includeContext>true</includeContext>
+                <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                    <maxDepthPerCause>20</maxDepthPerCause>
+                    <shortenedClassNameLength>20</shortenedClassNameLength>
+                    <rootCauseFirst>true</rootCauseFirst>
+                </throwableConverter>
+            </encoder>
+            <neverBlock>true</neverBlock>
+            <reconnectionDelay>10 seconds</reconnectionDelay>
+            <connectionTimeout>5000</connectionTimeout>
+            <writeTimeout>5000</writeTimeout>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOGSTASH"/>
+        </root>
+    </springProfile>
+
+    <!-- ─── Local profile — console only ────────────────────────── -->
+    <springProfile name="local,default">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- ─── Reduce noise from frameworks ─────────────────────────── -->
+    <logger name="org.hibernate.SQL"                  level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+    <logger name="org.springframework.web"            level="INFO"/>
+    <logger name="org.springframework.amqp"           level="INFO"/>
+    <logger name="com.zaxxer.hikari"                  level="WARN"/>
+    <logger name="org.springframework.cloud.gateway"  level="INFO"/>
+
+</configuration>

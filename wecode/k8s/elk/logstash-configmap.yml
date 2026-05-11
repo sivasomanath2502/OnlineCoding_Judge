@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: wecode
+data:
+  logstash.yml: |
+    http.host: "0.0.0.0"
+    xpack.monitoring.enabled: false
+
+  logstash.conf: |
+    input {
+      tcp {
+        port => 5000
+        codec => json_lines
+      }
+    }
+    filter {
+      if [level] {
+        mutate {
+          rename => { "level" => "log_level" }
+          rename => { "message" => "log_message" }
+        }
+      }
+      if [log_message] =~ /verdict/ {
+        mutate { add_tag => ["verdict_event"] }
+      }
+      if [log_message] =~ /submissionId/ {
+        mutate { add_tag => ["submission_event"] }
+      }
+      if [log_level] == "ERROR" {
+        mutate { add_tag => ["error_event"] }
+      }
+    }
+    output {
+      elasticsearch {
+        hosts => ["http://elasticsearch:9200"]
+        index => "wecode-%{[service_name]}-%{+YYYY.MM.dd}"
+      }
+    }

@@ -3,25 +3,18 @@
   hosts: app_servers
   connection: local
   gather_facts: yes
+
   environment:
     KUBECONFIG: /var/lib/jenkins/.kube/config
+
   vars:
     dockerhub_username: "sivasomanath2502"
     build_number: "latest"
     k8s_dir: "/opt/wecode/k8s"
     k8s_namespace: "wecode"
 
-    # FIX: MySQL wipe is now optional — pass -e "clean_mysql=true" only when
-    # you deliberately need a fresh database (first-time setup, broken init).
-    # Previously this ran unconditionally, destroying data on every deploy.
     clean_mysql: false
 
-    # FIX: Per-service change flags passed in from the root Jenkinsfile.
-    # Ansible uses these to decide which image tag to deploy per service:
-    #   - changed = true  → deploy the new versioned image (build_number tag)
-    #   - changed = false → keep 'latest' (image was not rebuilt this run,
-    #                        so the versioned tag does not exist on DockerHub
-    #                        and pulling it would cause ImagePullBackOff)
     changed_submission: "false"
     changed_worker:     "false"
     changed_result:     "false"
@@ -37,7 +30,6 @@
       - wecode-frontend
       - worker-service
 
-    # Per-service image tag map — resolves at runtime using the change flags above.
     service_tags:
       submission-service: "{{ build_number if changed_submission == 'true' else 'latest' }}"
       result-service:     "{{ build_number if changed_result     == 'true' else 'latest' }}"
@@ -48,7 +40,7 @@
 
   tasks:
 
-    # ─── FIX: MySQL wipe is now gated — only runs when explicitly requested ───
+    # ─── Step 0: MySQL hostPath cleanup (only when clean_mysql=true) ──────────
     - name: Clean MySQL data directory (only when clean_mysql=true)
       shell: |
         sudo rm -rf /data/mysql
@@ -57,11 +49,18 @@
       changed_when: true
       when: clean_mysql | bool
 
-    # ─── FIX: Delete stale cleanup pod before re-applying ────────────────────
-    # Without this, every deploy leaves a mysql-hostpath-cleanup pod in Error
-    # state that accumulates over time.
+    # ─── Step 0b: Elasticsearch hostPath — ensure exists, never wipe ──────────
+    # Logs must persist across pipeline runs — only mkdir, never rm -rf
+    - name: Ensure Elasticsearch data directory exists on host
+      shell: |
+        sudo mkdir -p /data/elasticsearch
+        sudo chmod 777 /data/elasticsearch
+      changed_when: false
+
     - name: Delete old mysql-hostpath-cleanup pod if it exists
-      command: kubectl delete pod mysql-hostpath-cleanup -n {{ k8s_namespace }} --ignore-not-found=true
+      command: >
+        kubectl delete pod mysql-hostpath-cleanup
+        -n {{ k8s_namespace }} --ignore-not-found=true
       changed_when: false
 
     # ─── Step 1: Check tools ──────────────────────────────────────────────────
@@ -76,8 +75,6 @@
         state: directory
         mode: '0755'
 
-    # Always sync latest manifests — ensures single-service deploys never
-    # apply stale manifests left over from a previous full deploy.
     - name: Copy k8s manifests to server
       copy:
         src: "../../k8s/"
@@ -104,7 +101,11 @@
     - name: Apply Redis manifests
       command: kubectl apply -f {{ k8s_dir }}/redis/
 
-    # ─── Step 5: Wait for infrastructure ─────────────────────────────────────
+    # ─── Step 5: ELK Stack ────────────────────────────────────────────────────
+    - name: Apply ELK manifests
+      command: kubectl apply -f {{ k8s_dir }}/elk/
+
+    # ─── Step 6: Wait for infrastructure ─────────────────────────────────────
     - name: Check if MySQL pod is running
       command: >
         kubectl get pods -l app=mysql -n {{ k8s_namespace }}
@@ -143,21 +144,44 @@
         kubectl wait --for=condition=ready pod -l app=redis
         -n {{ k8s_namespace }} --timeout=60s
 
-    # ─── Step 6: Apply all app manifests ─────────────────────────────────────
+    # ─── Step 7: Wait for ELK ────────────────────────────────────────────────
+    - name: Wait for Elasticsearch to be ready
+      command: >
+        kubectl wait --for=condition=ready pod -l app=elasticsearch
+        -n {{ k8s_namespace }} --timeout=300s
+      retries: 3
+      delay: 20
+      register: es_wait
+      until: es_wait.rc == 0
+
+    - name: Wait for Logstash to be ready
+      command: >
+        kubectl wait --for=condition=ready pod -l app=logstash
+        -n {{ k8s_namespace }} --timeout=300s
+      retries: 3
+      delay: 20
+      register: ls_wait
+      until: ls_wait.rc == 0
+
+    - name: Wait for Kibana to be ready (non-blocking)
+      command: >
+        kubectl wait --for=condition=ready pod -l app=kibana
+        -n {{ k8s_namespace }} --timeout=300s
+      ignore_errors: yes
+
+    # ─── Step 8: Apply all app manifests ─────────────────────────────────────
     - name: Apply manifests for {{ item }}
       command: kubectl apply -f {{ k8s_dir }}/{{ item }}/
       loop: "{{ app_services }}"
 
-    # ─── Step 7: Roll each service ONE AT A TIME ──────────────────────────────
-    # service_tags is passed so roll-service.yml knows which tag to use
-    # for each individual service.
+    # ─── Step 9: Roll each service ONE AT A TIME ──────────────────────────────
     - name: Roll out {{ item }} sequentially
       include_tasks: tasks/roll-service.yml
       loop: "{{ app_services }}"
       loop_control:
         loop_var: service_name
 
-    # ─── Step 8: Final status ─────────────────────────────────────────────────
+    # ─── Step 10: Final status ────────────────────────────────────────────────
     - name: Get all pods status
       command: kubectl get pods -n {{ k8s_namespace }}
       register: pods_status

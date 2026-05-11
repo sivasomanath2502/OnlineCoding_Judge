@@ -12,6 +12,7 @@ import com.onlinejudge.worker_service.service.VerdictService;
 import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -37,21 +38,23 @@ public class JobConsumer {
             @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag)
             throws IOException {
 
-        log.info("Job received: submissionId={}",
-                jobMessage.getSubmissionId());
+        // ─── Set MDC fields ─────────────────────────────────────
+        MDC.put("submissionId", jobMessage.getSubmissionId());
 
         Submission submission = null;
 
         try {
-            // ─── 1. Fetch submission ──────────────────────────────────
-            // ─── 1. Fetch submission with retry ──────────────────────────
+            log.info("Job received: submissionId={}",
+                    jobMessage.getSubmissionId());
+
+            // ─── 1. Fetch submission ─────────────────────────────
             submission = fetchSubmissionWithRetry(jobMessage.getSubmissionId());
 
-            // ─── 2. Mark RUNNING ──────────────────────────────────────
+            // ─── 2. Mark RUNNING ─────────────────────────────────
             submission.setStatus(SubmissionStatus.RUNNING);
             submissionRepository.save(submission);
 
-            // ─── 3. Get test cases ────────────────────────────────────
+            // ─── 3. Get test cases ───────────────────────────────
             List<TestCase> testCases = submission
                     .getProblem()
                     .getTestCases();
@@ -60,20 +63,21 @@ public class JobConsumer {
                 throw new ExecutionException("No test cases found");
             }
 
-            // ─── 4. Execute ───────────────────────────────────────────
+            // ─── 4. Execute ──────────────────────────────────────
             ExecutionResult result = executionService
                     .execute(submission, testCases);
 
-            // ─── 5. Save verdict ──────────────────────────────────────
+            // ─── 5. Save verdict ─────────────────────────────────
             verdictService.saveVerdict(submission, result);
 
-            // ─── 6. ACK — job done successfully ──────────────────────
+            // ─── 6. ACK — job done successfully ─────────────────
             channel.basicAck(deliveryTag, false);
 
             log.info("Job ACKed: submissionId={}, verdict={}",
                     submission.getId(), result.getVerdict());
 
         } catch (Exception e) {
+
             log.error("Job failed: submissionId={}, error={}",
                     jobMessage.getSubmissionId(), e.getMessage(), e);
 
@@ -83,14 +87,22 @@ public class JobConsumer {
 
             // NACK — requeue=false sends to DLQ after max retries
             channel.basicNack(deliveryTag, false, false);
+
+        } finally {
+
+            // Always clear MDC
+            MDC.clear();
         }
     }
+
     private Submission fetchSubmissionWithRetry(String submissionId)
             throws InterruptedException {
+
         int maxRetries = 3;
         int delayMs = 500;
 
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
+
             Optional<Submission> result = submissionRepository
                     .findByUUID(submissionId);
 
@@ -105,6 +117,7 @@ public class JobConsumer {
                 Thread.sleep(delayMs);
             }
         }
+
         throw new ExecutionException(
                 "Submission not found after " + maxRetries
                         + " attempts: " + submissionId);
