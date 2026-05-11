@@ -4,7 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="" />
+    <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ansible/playbooks/deploy-app-k8s.yml" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/playbooks/deploy-app-k8s.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/configmap.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/configmap.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/mysql/mysql-pv.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/mysql/mysql-pv.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/mysql/mysql-pvc.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/mysql/mysql-pvc.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/worker-service/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/worker-service/deployment.yml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

@@ -33,7 +33,7 @@ data:
   EXECUTION_MEMORY_LIMIT:    "128m"
   EXECUTION_CPU_LIMIT:       "0.5"
   EXECUTION_TEMP_DIR:        "/judge-tmp"
-  EXECUTION_HOST_TEMP_DIR:   "/tmp/judge"
+  EXECUTION_HOST_TEMP_DIR:   "/var/judge"
 
   # Spring profiles
   SPRING_PROFILES_ACTIVE: "docker"

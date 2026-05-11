@@ -42,6 +42,7 @@
 
     # ─── Step 0: MySQL hostPath cleanup (only when clean_mysql=true) ──────────
     - name: Clean MySQL data directory (only when clean_mysql=true)
+      when: clean_mysql | default(false) | bool
       shell: |
         sudo rm -rf /data/mysql
         sudo mkdir -p /data/mysql

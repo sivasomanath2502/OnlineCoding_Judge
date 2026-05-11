@@ -5,9 +5,6 @@ metadata:
   namespace: wecode
 spec:
   replicas: 2
-  # FIX 1: maxSurge: 0 prevents a 3rd pod being created during rollout.
-  # Without this, K8s tries to bring up a new pod BEFORE killing old ones,
-  # which exhausts node resources and causes the 180s rollout timeout failure.
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -77,5 +74,5 @@ spec:
             type: Socket
         - name: judge-tmp
           hostPath:
-            path: /tmp/judge
+            path: /var/judge
             type: DirectoryOrCreate
