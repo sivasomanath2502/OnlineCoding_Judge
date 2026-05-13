@@ -5,26 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/Jenkinsfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ansible/playbooks/deploy-app-k8s.yml" beforeDir="false" afterPath="$PROJECT_DIR$/ansible/playbooks/deploy-app-k8s.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/api-gateway/deployment.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/api-gateway/deployment.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/apply-all.sh" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/apply-all.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/configmap.yml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/configmap.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/api-gateway/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/api-gateway/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/java/com/onlinejudge/api_gateway/config/GatewayConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/java/com/onlinejudge/api_gateway/config/GatewayConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/resources/application-docker.properties" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/resources/application-docker.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/resources/application-local.properties" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/resources/application-local.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/api-gateway/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/src/App.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-frontend/src/api/client.js" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/src/api/client.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-frontend/src/components/Navbar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/src/components/Navbar.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-frontend/src/components/VerdictDisplay.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/src/components/VerdictDisplay.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-frontend/src/main.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/src/main.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-frontend/src/pages/ProblemDetailPage.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/src/pages/ProblemDetailPage.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-frontend/src/styles/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/src/styles/index.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

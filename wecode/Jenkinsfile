@@ -68,6 +68,7 @@ pipeline {
                     env.BUILD_RESULT     = changedFiles.contains('result-service')     ? 'true' : 'false'
                     env.BUILD_GATEWAY    = changedFiles.contains('api-gateway')        ? 'true' : 'false'
                     env.BUILD_ADMIN      = changedFiles.contains('admin-service')      ? 'true' : 'false'
+                    env.BUILD_AUTH       = changedFiles.contains('auth-service')       ? 'true' : 'false'
                     env.BUILD_FRONTEND   = changedFiles.contains('wecode-frontend')    ? 'true' : 'false'
 
                     echo """
@@ -77,6 +78,7 @@ pipeline {
                           result-service     : ${env.BUILD_RESULT}
                           api-gateway        : ${env.BUILD_GATEWAY}
                           admin-service      : ${env.BUILD_ADMIN}
+                          auth-service       : ${env.BUILD_AUTH}
                           wecode-frontend    : ${env.BUILD_FRONTEND}
                         =====================================
                     """
@@ -183,6 +185,7 @@ pipeline {
                             -e "changed_result=${env.BUILD_RESULT}" \
                             -e "changed_gateway=${env.BUILD_GATEWAY}" \
                             -e "changed_admin=${env.BUILD_ADMIN}" \
+                            -e "changed_auth=${env.BUILD_AUTH}" \
                             -e "changed_frontend=${env.BUILD_FRONTEND}"
                     """
                 }

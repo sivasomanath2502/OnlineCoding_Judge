@@ -20,6 +20,7 @@
     changed_result:     "false"
     changed_gateway:    "false"
     changed_admin:      "false"
+    changed_auth:       "false"
     changed_frontend:   "false"
 
     app_services:
@@ -27,6 +28,7 @@
       - result-service
       - admin-service
       - api-gateway
+      - auth-service
       - wecode-frontend
       - worker-service
 
