@@ -44,7 +44,7 @@ pipeline {
 
                     if (commitCount == 1) {
                         echo "First commit detected — building ALL services"
-                        changedFiles = 'submission-service worker-service result-service api-gateway admin-service wecode-frontend'
+                        changedFiles = 'submission-service worker-service result-service api-gateway admin-service auth-service wecode-frontend'
                     } else {
                         try {
                             changedFiles = sh(
