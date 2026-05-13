@@ -7,7 +7,6 @@ import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 
@@ -23,6 +22,9 @@ public class GatewayConfig {
 
     @Value("${admin.service.url}")
     private String adminServiceUrl;
+
+    @Value("${auth.service.url}")
+    private String authServiceUrl;
 
     // ─── Rate limit key ─────────────────────────
     @Bean
@@ -86,6 +88,15 @@ public class GatewayConfig {
                                 .addRequestHeader("X-Gateway-Version", "1.0")
                         )
                         .uri(adminServiceUrl))
+
+                // ─── Auth Service ─────────────────────────
+                .route("auth-service", r -> r
+                        .path("/auth/**")
+                        .filters(f -> f
+                                .addRequestHeader("X-Service", "auth-service")
+                                .addRequestHeader("X-Gateway-Version", "1.0")
+                        )
+                    .uri(authServiceUrl))
 
                 .build();
     }

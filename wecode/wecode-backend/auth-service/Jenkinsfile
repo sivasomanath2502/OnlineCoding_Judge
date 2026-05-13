@@ -1,0 +1,139 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// SERVICE JENKINSFILE TEMPLATE
+// ═══════════════════════════════════════════════════════════════════════════
+
+pipeline {
+    agent any
+    tools { maven 'Maven 3'; jdk 'JDK 17' }
+
+    parameters {
+        booleanParam(name: 'IS_CHANGED',     defaultValue: true,
+                     description: 'Set by root pipeline — true if this service code changed')
+        string(name: 'TRIGGER_TYPE',         defaultValue: 'manual',
+               description: 'root = triggered by root pipeline | manual = developer triggered')
+        string(name: 'ROOT_IMAGE_TAG',       defaultValue: '',
+               description: 'Build number from root pipeline — empty when manually triggered')
+    }
+
+    environment {
+        DOCKERHUB_USERNAME = 'sivasomanath2502'
+        SERVICE_NAME       = 'auth-service'
+        ROOT_DIR           = 'wecode/wecode-backend'
+        MODULE_PATH        = 'auth-service'
+        NAMESPACE          = 'wecode'
+        IMAGE_TAG          = "${params.ROOT_IMAGE_TAG ?: env.BUILD_NUMBER}"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        stage('Decide Build Path') {
+            steps {
+                script {
+                    def isManual  = (params.TRIGGER_TYPE == 'manual')
+                    def isChanged = params.IS_CHANGED
+
+                    env.DO_FULL_BUILD = (isManual || isChanged) ? 'true' : 'false'
+
+                    echo """
+============ Build Decision ============
+  SERVICE       : ${SERVICE_NAME}
+  TRIGGER_TYPE  : ${params.TRIGGER_TYPE}
+  IS_CHANGED    : ${isChanged}
+  IS_MANUAL     : ${isManual}
+  DO_FULL_BUILD : ${env.DO_FULL_BUILD}
+  IMAGE_TAG     : ${IMAGE_TAG}
+========================================
+                    """
+
+                    if (env.DO_FULL_BUILD == 'false') {
+                        echo "Skipping build — unchanged service will be redeployed with existing image"
+                    }
+                }
+            }
+        }
+
+        stage('Build') {
+            when { expression { env.DO_FULL_BUILD == 'true' } }
+            steps {
+                dir("${ROOT_DIR}") {
+                    sh "mvn -B clean package -DskipTests -pl ${MODULE_PATH} -am"
+                }
+            }
+        }
+
+        stage('Unit Tests') {
+            when { expression { env.DO_FULL_BUILD == 'true' } }
+            steps {
+                dir("${ROOT_DIR}") {
+                    sh "mvn test -pl ${MODULE_PATH}"
+                }
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true,
+                          testResults: '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Docker Build & Push') {
+            when { expression { env.DO_FULL_BUILD == 'true' } }
+            steps {
+                dir("${ROOT_DIR}/${MODULE_PATH}") {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'docker-hub-credential',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        retry(3) {
+                            sh """
+                                echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                                docker build \
+                                    -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG} \
+                                    -t ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest .
+                                docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:${IMAGE_TAG}
+                                docker push ${DOCKERHUB_USERNAME}/${SERVICE_NAME}:latest
+                            """
+                        }
+                        sh "docker logout || true"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy (Manual Trigger Only)') {
+            when { expression { params.TRIGGER_TYPE == 'manual' } }
+            steps {
+                dir('wecode/ansible') {
+                    sh """
+                        ansible-playbook playbooks/deploy-service-k8s.yml \
+                            -e "service_name=${SERVICE_NAME}" \
+                            -e "image_tag=${IMAGE_TAG}" \
+                            -e "dockerhub_username=${DOCKERHUB_USERNAME}" \
+                            -e "namespace=${NAMESPACE}"
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            script {
+                if (params.TRIGGER_TYPE == 'manual') {
+                    echo "✅ ${SERVICE_NAME}:${IMAGE_TAG} — manually triggered, built and deployed"
+                } else if (env.DO_FULL_BUILD == 'true') {
+                    echo "✅ ${SERVICE_NAME}:${IMAGE_TAG} — built and pushed (root pipeline deploys)"
+                } else {
+                    echo "✅ ${SERVICE_NAME} — no change, skipped build (root pipeline redeploys existing image)"
+                }
+            }
+        }
+        failure { echo "❌ ${SERVICE_NAME} pipeline failed" }
+        always  { sh 'docker image prune -f || true' }
+    }
+}

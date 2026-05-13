@@ -34,6 +34,7 @@
       submission-service: "{{ build_number if changed_submission == 'true' else 'latest' }}"
       result-service:     "{{ build_number if changed_result     == 'true' else 'latest' }}"
       admin-service:      "{{ build_number if changed_admin      == 'true' else 'latest' }}"
+      auth-service:       "{{ build_number if changed_auth       == 'true' else 'latest' }}"
       api-gateway:        "{{ build_number if changed_gateway    == 'true' else 'latest' }}"
       wecode-frontend:    "{{ build_number if changed_frontend   == 'true' else 'latest' }}"
       worker-service:     "{{ build_number if changed_worker     == 'true' else 'latest' }}"
@@ -198,6 +199,10 @@
       command: kubectl get pods -n {{ k8s_namespace }}
       register: pods_status
       changed_when: false
+
+    - name: Automate port-forwarding for local access
+      command: bash {{ k8s_dir }}/port-forward.sh
+      changed_when: true
 
     - name: Show pod status
       debug:

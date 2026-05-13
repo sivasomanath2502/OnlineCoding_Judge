@@ -140,6 +140,16 @@ pipeline {
                                   string(name: 'ROOT_IMAGE_TAG',    value: env.BUILD_NUMBER)
                               ]
                     }
+                    parallelJobs['auth-service'] = {
+                        build job: 'auth-service',
+                              wait: true,
+                              propagate: true,
+                              parameters: [
+                                  booleanParam(name: 'IS_CHANGED',  value: env.BUILD_AUTH == 'true'),
+                                  string(name: 'TRIGGER_TYPE',      value: 'root'),
+                                  string(name: 'ROOT_IMAGE_TAG',    value: env.BUILD_NUMBER)
+                              ]
+                    }
                     parallelJobs['wecode-frontend'] = {
                         build job: 'wecode-frontend',
                               wait: true,

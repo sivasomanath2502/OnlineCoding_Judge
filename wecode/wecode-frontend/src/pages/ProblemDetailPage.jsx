@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getProblem, submitCode, getResult, getStreamUrl } from '../api/client'
 import CodeEditor from '../components/CodeEditor'
 import VerdictDisplay from '../components/VerdictDisplay'
+import { useAuth } from '../contexts/AuthContext'
 
 // ─── SVG Icons ────────────────────────────────────────────────────
 const BackIcon = () => (
@@ -169,6 +170,7 @@ function HistoryItem({ item, onRestore }) {
 export default function ProblemDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [problem, setProblem] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -326,9 +328,10 @@ export default function ProblemDetailPage() {
   // ─── Run ──────────────────────────────────────────────────────
   const handleRun = async () => {
     if (!code.trim()) return
+    const userId = user?.userId || 'user-guest'
     setRunStatus(RUN_STATUS.RUNNING); setRunResult(null); setActiveTab(TAB.TESTCASE)
     try {
-      const res = await submitCode({ problemId: id, languageId: lang.id, userId: 'user-guest', code })
+      const res = await submitCode({ problemId: id, languageId: lang.id, userId, code })
       await pollForRun(res.data.submissionId)
     } catch {
       setRunStatus(RUN_STATUS.ERROR)
@@ -360,10 +363,11 @@ export default function ProblemDetailPage() {
   // ─── Submit ───────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!code.trim()) return
+    const userId = user?.userId || 'user-guest'
     setPhase(PHASE.COMPILING); setVerdict(null)
     setStatusMsg('Submitting...'); setActiveTab(TAB.RESULT)
     try {
-      const res = await submitCode({ problemId: id, languageId: lang.id, userId: 'user-guest', code })
+      const res = await submitCode({ problemId: id, languageId: lang.id, userId, code })
       setStatusMsg('Judging...'); setPhase(PHASE.RUNNING)
       openSSE(res.data.submissionId)
     } catch {

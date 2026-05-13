@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: wecode
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: sivasomanath2502/auth-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8085
+          envFrom:
+            - configMapRef:
+                name: wecode-config
+            - secretRef:
+                name: wecode-secret
+          env:
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: wecode-auth-secret
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wecode-auth-secret
+                  key: GOOGLE_CLIENT_SECRET
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wecode-auth-secret
+                  key: JWT_SECRET
+            - name: APP_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: wecode-auth-secret
+                  key: APP_ADMIN_EMAIL
+            - name: GOOGLE_REDIRECT_URI
+              valueFrom:
+                secretKeyRef:
+                  name: wecode-auth-secret
+                  key: GOOGLE_REDIRECT_URI
+          readinessProbe:
+            httpGet:
+              path: /auth/health
+              port: 8085
+            initialDelaySeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /auth/health
+              port: 8085
+            initialDelaySeconds: 60
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 300m

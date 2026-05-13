@@ -35,6 +35,11 @@ spec:
           env:
             - name: SERVER_PORT
               value: "8090"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wecode-auth-secret
+                  key: JWT_SECRET
           startupProbe:
             httpGet:
               path: /actuator/health

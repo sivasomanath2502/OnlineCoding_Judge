@@ -21,6 +21,7 @@ data:
   RESULT_SERVICE_URL:     "http://result-service:8083"
   SUBMISSION_SERVICE_URL: "http://submission-service:8081"
   ADMIN_SERVICE_URL:      "http://admin-service:8084"
+  AUTH_SERVICE_URL:       "http://auth-service:8085"
 
   # RabbitMQ queue config
   RABBITMQ_QUEUE_JOB:     "job.queue"

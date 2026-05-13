@@ -47,6 +47,7 @@ fi
 # ─── Step 2: ConfigMap and Secrets ───────────────────────────────────────────
 kubectl apply -f configmap.yml
 kubectl apply -f secret.yml
+kubectl apply -f auth-secret.yaml
 
 # ─── Step 3: Infrastructure ───────────────────────────────────────────────────
 kubectl apply -f mysql/
@@ -104,6 +105,10 @@ kubectl wait --for=condition=ready pod -l app=api-gateway \
   -n wecode --timeout=300s
 echo "✅ All services deployed!"
 
+# ─── Step 8: Port-forwarding ─────────────────────────────────────────────────
+echo "🔌 Automating port-forwarding for local access..."
+bash port-forward.sh
+
 # ─── Final status ─────────────────────────────────────────────────────────────
 echo ""
 echo "📋 Pod status:"
@@ -114,4 +119,4 @@ echo "  Frontend    : http://$(minikube ip):30000"
 echo "  API Gateway : http://$(minikube ip):30090"
 echo "  RabbitMQ UI : http://$(minikube ip):31673"
 echo "  Kibana      : http://$(minikube ip):31601"
-echo "  Elasticsearch: http://$(minikube ip):9200 (ClusterIP — use port-forward)"
+echo "  Elasticsearch: http://$(minikube ip):9200 (ClusterIP — use port-forward)"/$(minikube ip):9200 (ClusterIP — use port-forward)"

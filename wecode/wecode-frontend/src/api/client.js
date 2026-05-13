@@ -1,9 +1,10 @@
 // Frontend service
 import axios from 'axios'
 
-const GATEWAY = ''
+const BASE_URL = 'http://localhost:8090';
+
 export const api = axios.create({
-  baseURL: GATEWAY,
+  baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
 })
@@ -13,12 +14,24 @@ api.interceptors.request.use((config) => {
         ? crypto.randomUUID()
         : Math.random().toString(36).slice(2) + Date.now().toString(36)
     config.headers['X-Request-Id'] = id
+    
+    const token = sessionStorage.getItem('wecode_token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
     return config
 })
 
 api.interceptors.response.use(
   response => response,
   error => {
+    if (error.response?.status === 401) {
+        sessionStorage.removeItem('wecode_token');
+        // Only redirect to login if we are NOT on the homepage (public route)
+        if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
+            window.location.href = '/login';
+        }
+    }
     if (error.response?.status === 429) {
       console.warn('Rate limit hit — slow down requests')
     }
@@ -34,4 +47,4 @@ export const addTestCases    = (pid, d)  => api.post(`/admin/problems/${pid}/tes
 export const deleteTestCase  = (id)      => api.delete(`/admin/test-cases/${id}`)
 export const submitCode      = (data)    => api.post('/submissions', data)
 export const getResult       = (id)      => api.get(`/results/${id}`)
-export const getStreamUrl    = (id)      => `${GATEWAY}/results/${id}/stream`
+export const getStreamUrl    = (id)      => `${BASE_URL}/results/${id}/stream`
