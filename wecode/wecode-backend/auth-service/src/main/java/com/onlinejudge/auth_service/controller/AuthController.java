@@ -23,6 +23,9 @@ public class AuthController {
     private final AuthService authService;
     private final JwtService jwtService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
+
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         log.info("Health check endpoint called");
@@ -45,9 +48,10 @@ public class AuthController {
         Claims claims = jwtService.extractAllClaims(token);
         String role = claims.get("role", String.class);
         
-        // Redirect to frontend
-        String redirectUrl = "http://localhost:5173/auth/callback?token=" + token + "&role=" + role;
-        log.info("Redirecting to frontend auth callback");
+        // Redirect to frontend - ensure we don't get double slashes if frontendUrl is "/"
+        String path = "/login/callback?token=" + token + "&role=" + role;
+        String redirectUrl = (frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl) + path;
+        log.info("Redirecting to frontend auth callback: {}", redirectUrl);
         response.sendRedirect(redirectUrl);
     }
 

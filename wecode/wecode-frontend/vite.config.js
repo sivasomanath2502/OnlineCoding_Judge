@@ -10,6 +10,7 @@ export default defineConfig({
       '/submissions': { target: 'http://localhost:8090', changeOrigin: true },
       '/results':     { target: 'http://localhost:8090', changeOrigin: true },
       '/admin':       { target: 'http://localhost:8090', changeOrigin: true },
+      '/auth':        { target: 'http://localhost:8090', changeOrigin: true },
     },
   },
 })

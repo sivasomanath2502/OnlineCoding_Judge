@@ -44,8 +44,6 @@ spec:
             httpGet:
               path: /actuator/health
               port: 8083
-            # FIX 2: Increased from 10s to 30s — JVM needs more warmup time
-            # before it can reliably serve the health endpoint
             initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 6

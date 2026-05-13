@@ -33,7 +33,7 @@ export default function App() {
         <Routes>
           <Route path="/"               element={<ProblemsPage />} />
           <Route path="/login"          element={<LoginPage />} />
-          <Route path="/auth/callback"  element={<AuthCallbackPage />} />
+          <Route path="/login/callback"  element={<AuthCallbackPage />} />
           <Route path="/problems/:id"   element={<ProtectedRoute><ProblemDetailPage /></ProtectedRoute>} />
           <Route path="/admin"          element={<AdminRoute><AdminPage /></AdminRoute>} />
           <Route path="*"               element={<Navigate to="/" replace />} />

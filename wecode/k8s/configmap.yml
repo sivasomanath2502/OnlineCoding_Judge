@@ -42,3 +42,6 @@ data:
   # logstash
   LOGSTASH_HOST: "logstash"
   LOGSTASH_PORT: "5000"
+
+  # Frontend URL for Auth Redirects (Absolute URL required for cross-origin redirects)
+  APP_FRONTEND_URL: "http://localhost:5173"

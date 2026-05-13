@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../api/client';
+import { api, BASE_URL } from '../api/client';
 
 const AuthContext = createContext();
 
@@ -47,7 +47,7 @@ export function AuthProvider({ children }) {
         if (redirectPath) {
             sessionStorage.setItem('wecode_redirect_after_login', redirectPath);
         }
-        window.location.href = 'http://localhost:8090/auth/google';
+        window.location.href = `/auth/google`;
     };
 
     const logout = async () => {
