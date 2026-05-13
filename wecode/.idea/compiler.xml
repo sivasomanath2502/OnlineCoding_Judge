@@ -9,12 +9,13 @@
         <outputRelativeToContentRoot value="true" />
         <module name="worker-service" />
         <module name="submission-service" />
+        <module name="api-gateway" />
         <module name="result-service" />
         <module name="admin-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="api-gateway" target="17" />
+      <module name="auth-service" target="17" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">

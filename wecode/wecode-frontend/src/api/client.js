@@ -1,4 +1,4 @@
-// Frontend file where the connection to backend is done
+// Frontend service
 import axios from 'axios'
 
 const GATEWAY = ''
