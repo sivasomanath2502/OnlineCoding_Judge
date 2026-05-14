@@ -30,7 +30,7 @@ NC='\033[0m'
 
 start_forwards() {
     echo "Starting detached port forwarding for user: $CURRENT_USER"
-    
+
     # Ensure files exist
     touch "$LOG_FILE" "$PID_FILE"
     > "$PID_FILE" # Clear old PIDs
@@ -53,7 +53,7 @@ start_forwards() {
         # Using 0.0.0.0 for reachability
         # Double fork to ensure it's orphaned from Jenkins
         ( ( nohup kubectl port-forward "svc/$SERVICE" "${LOCAL_PORT}:${REMOTE_PORT}" -n "$NAMESPACE" --address 0.0.0.0 >> "$LOG_FILE" 2>&1 & ) & )
-        
+
         echo -e "  ${GREEN}QUEUED${NC}  $SERVICE → localhost:$LOCAL_PORT"
     done
 
