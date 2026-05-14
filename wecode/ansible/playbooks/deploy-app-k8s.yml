@@ -43,19 +43,36 @@
 
   tasks:
 
-    # ─── Step 0: Ensure hostPaths exist on Minikube node ─────────────────────
-    - name: Ensure MySQL data directory exists on Minikube node
+    # ─── Step 0: Ensure hostPaths exist (Kubernetes-native approach) ──────────
+    - name: Ensure HostPath directories exist on node
       shell: |
-        if [ "{{ clean_mysql }}" = "true" ]; then
-          minikube ssh "sudo rm -rf /data/mysql && sudo mkdir -p /data/mysql && sudo chmod 777 /data/mysql"
-        else
-          minikube ssh "sudo mkdir -p /data/mysql && sudo chmod 777 /data/mysql"
-        fi
+        kubectl delete job hostpath-setup -n {{ k8s_namespace }} --ignore-not-found=true
+        kubectl apply -f - <<EOF
+        apiVersion: batch/v1
+        kind: Job
+        metadata:
+          name: hostpath-setup
+          namespace: {{ k8s_namespace }}
+        spec:
+          template:
+            spec:
+              containers:
+              - name: setup
+                image: alpine
+                command: ["sh", "-c", "mkdir -p /data/mysql /data/elasticsearch && chmod 777 /data/mysql /data/elasticsearch"]
+                volumeMounts:
+                - name: host-data
+                  mountPath: /data
+              restartPolicy: Never
+              volumes:
+              - name: host-data
+                hostPath:
+                  path: /data
+        EOF
+        kubectl wait --for=condition=complete job/hostpath-setup -n {{ k8s_namespace }} --timeout=60s
+        kubectl delete job hostpath-setup -n {{ k8s_namespace }}
       changed_when: true
-
-    - name: Ensure Elasticsearch data directory exists on Minikube node
-      shell: minikube ssh "sudo mkdir -p /data/elasticsearch && sudo chmod 777 /data/elasticsearch"
-      changed_when: false
+      ignore_errors: yes
 
     # ─── Step 1: Check tools ──────────────────────────────────────────────────
     - name: Check kubectl is available
@@ -69,7 +86,7 @@
         state: directory
         mode: '0755'
 
-    - name: Copy k8s manifests to server
+    - name: Copy k8s manifests to Jenkins host
       copy:
         src: "../../k8s/"
         dest: "{{ k8s_dir }}/"
