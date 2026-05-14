@@ -47,6 +47,20 @@
     - name: Apply namespace
       command: kubectl apply -f {{ k8s_dir }}/namespace.yml
 
+    - name: Check if wecode-auth-secret exists (Applied manually by user)
+      command: kubectl get secret wecode-auth-secret -n {{ k8s_namespace }}
+      register: secret_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Fail if auth secret is missing
+      fail:
+        msg: |
+          ERROR: 'wecode-auth-secret' is missing in namespace '{{ k8s_namespace }}'.
+          You MUST apply it manually as it is not in Git.
+          Run: kubectl apply -f k8s/auth-secret.yml -n {{ k8s_namespace }}
+      when: secret_check.rc != 0
+
     # ─── Step 2: Ensure hostPaths exist (Kubernetes-native approach) ──────────
     - name: Ensure HostPath directories exist on node
       shell: |
@@ -123,7 +137,7 @@
 
     - name: Wait for Infrastructure to be ready
       command: >
-        kubectl wait --for=condition=ready pod -l app={{ item.app }}
+        kubectl rollout status deployment/{{ item.app }}
         -n {{ k8s_namespace }} --timeout={{ item.timeout }}
       loop:
         - { app: 'mysql', timeout: '300s' }

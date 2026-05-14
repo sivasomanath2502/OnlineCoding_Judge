@@ -41,8 +41,13 @@ start_forwards() {
         REMOTE_PORT="${PORTS##*:}"
 
         # Kill any existing forward ON THIS PORT (any user)
-        # We use sudo only if available, otherwise just try
-        fuser -k "${LOCAL_PORT}/tcp" &>/dev/null || true
+        # We try to kill, but don't fail if we can't (might belong to another user)
+        if command -v fuser >/dev/null 2>&1; then
+          fuser -k "${LOCAL_PORT}/tcp" >/dev/null 2>&1 || true
+        else
+          # Fallback to lsof if fuser is missing
+          lsof -ti:"${LOCAL_PORT}" | xargs kill -9 >/dev/null 2>&1 || true
+        fi
 
         # Start port forward
         # Using 0.0.0.0 for reachability
