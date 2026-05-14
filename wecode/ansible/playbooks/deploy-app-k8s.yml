@@ -108,20 +108,11 @@
         -p='[{"op":"remove","path":"/spec/claimRef/uid"},{"op":"remove","path":"/spec/claimRef/resourceVersion"}]'
       when: mysql_pv_phase.stdout == "Released"
 
-    - name: Apply ConfigMap & Secrets
+    - name: Apply ConfigMap & Standard Secrets
       command: kubectl apply -f {{ k8s_dir }}/{{ item }}
       loop:
         - configmap.yml
         - secret.yml
-
-    - name: Check if auth-secret.yml exists
-      stat:
-        path: "{{ k8s_dir }}/auth-secret.yml"
-      register: auth_secret_file
-
-    - name: Apply Auth Secret (if present)
-      command: kubectl apply -f {{ k8s_dir }}/auth-secret.yml
-      when: auth_secret_file.stat.exists
 
     - name: Apply Infrastructure (MySQL, RabbitMQ, Redis)
       command: kubectl apply -f {{ k8s_dir }}/{{ item }}/
