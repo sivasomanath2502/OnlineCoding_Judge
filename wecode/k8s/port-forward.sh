@@ -77,11 +77,14 @@ start_forwards() {
         fuser -k "${LOCAL_PORT}/tcp" &>/dev/null || true
 
         # Start port forward in background
-        kubectl port-forward \
+        export BUILD_ID=dontKillMe
+        export JENKINS_NODE_COOKIE=dontKillMe
+        nohup kubectl port-forward \
             "svc/$SERVICE" \
             "${LOCAL_PORT}:${REMOTE_PORT}" \
             -n "$NAMESPACE" \
             >> "$LOG_FILE" 2>&1 &
+        disown %1 2>/dev/null || true
 
         PF_PID=$!
         echo "$PF_PID $SERVICE $LOCAL_PORT" >> "$PID_FILE"

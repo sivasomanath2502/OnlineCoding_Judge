@@ -43,7 +43,11 @@
 
   tasks:
 
-    # ─── Step 0: Ensure hostPaths exist (Kubernetes-native approach) ──────────
+    # ─── Step 1: Namespace / Config / Secrets ────────────────────────────────
+    - name: Apply namespace
+      command: kubectl apply -f {{ k8s_dir }}/namespace.yml
+
+    # ─── Step 2: Ensure hostPaths exist (Kubernetes-native approach) ──────────
     - name: Ensure HostPath directories exist on node
       shell: |
         kubectl delete job hostpath-setup -n {{ k8s_namespace }} --ignore-not-found=true
@@ -74,12 +78,11 @@
       changed_when: true
       ignore_errors: yes
 
-    # ─── Step 1: Check tools ──────────────────────────────────────────────────
+    # ─── Step 3: Check tools & Sync Manifests ────────────────────────────────
     - name: Check kubectl is available
       command: kubectl version --client
       changed_when: false
 
-    # ─── Step 2: Manifests directory ─────────────────────────────────────────
     - name: Ensure k8s manifests directory exists on Jenkins host
       file:
         path: "{{ k8s_dir }}"
@@ -92,27 +95,24 @@
         dest: "{{ k8s_dir }}/"
         mode: '0644'
 
-    # ─── Step 3: Namespace / Config / Secrets ────────────────────────────────
-    - name: Apply namespace
-      command: kubectl apply -f {{ k8s_dir }}/namespace.yml
-
+    # ─── Step 4: Config / Secrets / Infrastructure ──────────────────────────
     - name: Check mysql-pv phase
       command: kubectl get pv mysql-pv -o jsonpath='{.status.phase}'
       register: mysql_pv_phase
       changed_when: false
       ignore_errors: yes
 
-    - name: Reset Released mysql-pv so it can rebind to mysql-pvc
+    - name: Reset Released mysql-pv
       command: >
         kubectl patch pv mysql-pv --type=json
         -p='[{"op":"remove","path":"/spec/claimRef/uid"},{"op":"remove","path":"/spec/claimRef/resourceVersion"}]'
       when: mysql_pv_phase.stdout == "Released"
 
-    - name: Apply ConfigMap
-      command: kubectl apply -f {{ k8s_dir }}/configmap.yml
-
-    - name: Apply Secrets (Standard)
-      command: kubectl apply -f {{ k8s_dir }}/secret.yml
+    - name: Apply ConfigMap & Secrets
+      command: kubectl apply -f {{ k8s_dir }}/{{ item }}
+      loop:
+        - configmap.yml
+        - secret.yml
 
     - name: Check if auth-secret.yml exists
       stat:
@@ -123,7 +123,6 @@
       command: kubectl apply -f {{ k8s_dir }}/auth-secret.yml
       when: auth_secret_file.stat.exists
 
-    # ─── Step 4: Infrastructure ───────────────────────────────────────────────
     - name: Apply Infrastructure (MySQL, RabbitMQ, Redis)
       command: kubectl apply -f {{ k8s_dir }}/{{ item }}/
       loop:
@@ -152,34 +151,33 @@
         - { app: 'elasticsearch' }
         - { app: 'logstash' }
 
-    # ─── Step 6: Apply all app manifests ─────────────────────────────────────
-    - name: Apply manifests for {{ item }}
+    # ─── Step 6: Apply & Roll App Services ───────────────────────────────────
+    - name: Apply manifests for app services
       command: kubectl apply -f {{ k8s_dir }}/{{ item }}/
       loop: "{{ app_services }}"
 
-    # ─── Step 7: Roll each service ONE AT A TIME ──────────────────────────────
-    - name: Roll out {{ item }} sequentially
+    - name: Roll out app services sequentially
       include_tasks: tasks/roll-service.yml
       loop: "{{ app_services }}"
       loop_control:
         loop_var: service_name
 
-    # ─── Step 8: Final status & Port Forwarding ──────────────────────────────
-    - name: Get all pods status
+    # ─── Step 7: Detached Port Forwarding ────────────────────────────────────
+    - name: Start persistent port-forwarding
+      shell: "nohup bash {{ k8s_dir }}/port-forward.sh > /tmp/pf-startup.log 2>&1 &"
+      environment:
+        BUILD_ID: "dontKillMe"
+        JENKINS_NODE_COOKIE: "dontKillMe"
+      changed_when: true
+
+    - name: Show pod status
       command: kubectl get pods -n {{ k8s_namespace }}
       register: pods_status
       changed_when: false
 
-    - name: Automate port-forwarding for local access
-      command: bash {{ k8s_dir }}/port-forward.sh
-      environment:
-        BUILD_ID: "dontKillMe"
-      changed_when: true
-
-    - name: Show pod status
+    - name: Debug Output
       debug:
         msg: "{{ pods_status.stdout_lines }}"
-
 
     - name: Deployment complete
       debug:
