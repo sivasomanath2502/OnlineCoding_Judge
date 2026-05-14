@@ -4,6 +4,7 @@ pipeline {
     environment {
         DOCKERHUB_USERNAME = 'sivasomanath2502'
         NAMESPACE          = 'wecode'
+        JENKINS_NODE_COOKIE = 'dontKillMe'
     }
 
     stages {

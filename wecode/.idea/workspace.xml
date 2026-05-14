@@ -5,26 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="00b59b89-3962-47f9-8ea6-7130de6baea6" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/wecode-backend/admin-service/src/main/java/com/onlinejudge/admin_service/AdminServiceApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-backend/admin-service/src/main/java/com/onlinejudge/admin_service/AdminServiceApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/auth-service-1.0.0.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/auth-service-1.0.0.jar.original" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/application-docker.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/application-local.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/application.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/com/onlinejudge/auth_service/AuthServiceApplication.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/com/onlinejudge/auth_service/controller/AuthController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/com/onlinejudge/auth_service/dto/GoogleTokenResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/com/onlinejudge/auth_service/dto/GoogleUserInfo.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/com/onlinejudge/auth_service/entity/User$UserBuilder.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/com/onlinejudge/auth_service/entity/User.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/com/onlinejudge/auth_service/entity/enums/Role.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/com/onlinejudge/auth_service/exception/GlobalExceptionHandler.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/com/onlinejudge/auth_service/repository/UserRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/com/onlinejudge/auth_service/service/AuthService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/classes/com/onlinejudge/auth_service/service/JwtService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/maven-archiver/pom.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/wecode-backend/auth-service/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/apply-all.sh" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/apply-all.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/wecode-frontend/src/api/client.js" beforeDir="false" afterPath="$PROJECT_DIR$/wecode-frontend/src/api/client.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -122,6 +105,9 @@
   }
 }]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/wecode-backend/auth-service" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/online-judge-backend" />

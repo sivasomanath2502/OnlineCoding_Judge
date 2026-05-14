@@ -43,27 +43,18 @@
 
   tasks:
 
-    # ─── Step 0: MySQL hostPath cleanup (only when clean_mysql=true) ──────────
-    - name: Clean MySQL data directory (only when clean_mysql=true)
+    # ─── Step 0: Ensure hostPaths exist on Minikube node ─────────────────────
+    - name: Ensure MySQL data directory exists on Minikube node
       shell: |
-        sudo rm -rf /data/mysql
-        sudo mkdir -p /data/mysql
-        sudo chmod 777 /data/mysql
+        if [ "{{ clean_mysql }}" = "true" ]; then
+          minikube ssh "sudo rm -rf /data/mysql && sudo mkdir -p /data/mysql && sudo chmod 777 /data/mysql"
+        else
+          minikube ssh "sudo mkdir -p /data/mysql && sudo chmod 777 /data/mysql"
+        fi
       changed_when: true
-      when: clean_mysql | bool
 
-    # ─── Step 0b: Elasticsearch hostPath — ensure exists, never wipe ──────────
-    # Logs must persist across pipeline runs — only mkdir, never rm -rf
-    - name: Ensure Elasticsearch data directory exists on host
-      shell: |
-        sudo mkdir -p /data/elasticsearch
-        sudo chmod 777 /data/elasticsearch
-      changed_when: false
-
-    - name: Delete old mysql-hostpath-cleanup pod if it exists
-      command: >
-        kubectl delete pod mysql-hostpath-cleanup
-        -n {{ k8s_namespace }} --ignore-not-found=true
+    - name: Ensure Elasticsearch data directory exists on Minikube node
+      shell: minikube ssh "sudo mkdir -p /data/elasticsearch && sudo chmod 777 /data/elasticsearch"
       changed_when: false
 
     # ─── Step 1: Check tools ──────────────────────────────────────────────────
@@ -72,7 +63,7 @@
       changed_when: false
 
     # ─── Step 2: Manifests directory ─────────────────────────────────────────
-    - name: Ensure k8s manifests directory exists on server
+    - name: Ensure k8s manifests directory exists on Jenkins host
       file:
         path: "{{ k8s_dir }}"
         state: directory
@@ -103,100 +94,60 @@
     - name: Apply ConfigMap
       command: kubectl apply -f {{ k8s_dir }}/configmap.yml
 
-    - name: Apply Secrets
+    - name: Apply Secrets (Standard)
       command: kubectl apply -f {{ k8s_dir }}/secret.yml
 
+    - name: Check if auth-secret.yml exists
+      stat:
+        path: "{{ k8s_dir }}/auth-secret.yml"
+      register: auth_secret_file
+
+    - name: Apply Auth Secret (if present)
+      command: kubectl apply -f {{ k8s_dir }}/auth-secret.yml
+      when: auth_secret_file.stat.exists
+
     # ─── Step 4: Infrastructure ───────────────────────────────────────────────
-    - name: Apply MySQL manifests
-      command: kubectl apply -f {{ k8s_dir }}/mysql/
+    - name: Apply Infrastructure (MySQL, RabbitMQ, Redis)
+      command: kubectl apply -f {{ k8s_dir }}/{{ item }}/
+      loop:
+        - mysql
+        - rabbitmq
+        - redis
 
-    - name: Apply RabbitMQ manifests
-      command: kubectl apply -f {{ k8s_dir }}/rabbitmq/
-
-    - name: Apply Redis manifests
-      command: kubectl apply -f {{ k8s_dir }}/redis/
+    - name: Wait for Infrastructure to be ready
+      command: >
+        kubectl wait --for=condition=ready pod -l app={{ item.app }}
+        -n {{ k8s_namespace }} --timeout={{ item.timeout }}
+      loop:
+        - { app: 'mysql', timeout: '300s' }
+        - { app: 'rabbitmq', timeout: '120s' }
+        - { app: 'redis', timeout: '60s' }
 
     # ─── Step 5: ELK Stack ────────────────────────────────────────────────────
     - name: Apply ELK manifests
       command: kubectl apply -f {{ k8s_dir }}/elk/
 
-    # ─── Step 6: Wait for infrastructure ─────────────────────────────────────
-    - name: Check if MySQL pod is running
+    - name: Wait for ELK to be ready
       command: >
-        kubectl get pods -l app=mysql -n {{ k8s_namespace }}
-        --field-selector=status.phase=Running -o name
-      register: mysql_pods
-      changed_when: false
-      ignore_errors: yes
-
-    - name: Wait for old MySQL pod to terminate (only if not running)
-      command: >
-        kubectl wait pod -l app=mysql -n {{ k8s_namespace }}
-        --for=delete --timeout=120s
-      ignore_errors: yes
-      when: mysql_pods.stdout == ""
-
-    - name: Wait for MySQL to be ready
-      command: >
-        kubectl wait --for=condition=ready pod -l app=mysql
+        kubectl wait --for=condition=ready pod -l app={{ item.app }}
         -n {{ k8s_namespace }} --timeout=300s
-      retries: 3
-      delay: 15
-      register: mysql_wait
-      until: mysql_wait.rc == 0
+      loop:
+        - { app: 'elasticsearch' }
+        - { app: 'logstash' }
 
-    - name: Wait for RabbitMQ to be ready
-      command: >
-        kubectl wait --for=condition=ready pod -l app=rabbitmq
-        -n {{ k8s_namespace }} --timeout=120s
-      retries: 3
-      delay: 10
-      register: rabbitmq_wait
-      until: rabbitmq_wait.rc == 0
-
-    - name: Wait for Redis to be ready
-      command: >
-        kubectl wait --for=condition=ready pod -l app=redis
-        -n {{ k8s_namespace }} --timeout=60s
-
-    # ─── Step 7: Wait for ELK ────────────────────────────────────────────────
-    - name: Wait for Elasticsearch to be ready
-      command: >
-        kubectl wait --for=condition=ready pod -l app=elasticsearch
-        -n {{ k8s_namespace }} --timeout=300s
-      retries: 3
-      delay: 20
-      register: es_wait
-      until: es_wait.rc == 0
-
-    - name: Wait for Logstash to be ready
-      command: >
-        kubectl wait --for=condition=ready pod -l app=logstash
-        -n {{ k8s_namespace }} --timeout=300s
-      retries: 3
-      delay: 20
-      register: ls_wait
-      until: ls_wait.rc == 0
-
-    - name: Wait for Kibana to be ready (non-blocking)
-      command: >
-        kubectl wait --for=condition=ready pod -l app=kibana
-        -n {{ k8s_namespace }} --timeout=300s
-      ignore_errors: yes
-
-    # ─── Step 8: Apply all app manifests ─────────────────────────────────────
+    # ─── Step 6: Apply all app manifests ─────────────────────────────────────
     - name: Apply manifests for {{ item }}
       command: kubectl apply -f {{ k8s_dir }}/{{ item }}/
       loop: "{{ app_services }}"
 
-    # ─── Step 9: Roll each service ONE AT A TIME ──────────────────────────────
+    # ─── Step 7: Roll each service ONE AT A TIME ──────────────────────────────
     - name: Roll out {{ item }} sequentially
       include_tasks: tasks/roll-service.yml
       loop: "{{ app_services }}"
       loop_control:
         loop_var: service_name
 
-    # ─── Step 10: Final status ────────────────────────────────────────────────
+    # ─── Step 8: Final status & Port Forwarding ──────────────────────────────
     - name: Get all pods status
       command: kubectl get pods -n {{ k8s_namespace }}
       register: pods_status
@@ -204,11 +155,14 @@
 
     - name: Automate port-forwarding for local access
       command: bash {{ k8s_dir }}/port-forward.sh
+      environment:
+        BUILD_ID: "dontKillMe"
       changed_when: true
 
     - name: Show pod status
       debug:
         msg: "{{ pods_status.stdout_lines }}"
+
 
     - name: Deployment complete
       debug:

@@ -27,7 +27,7 @@ api.interceptors.response.use(
   error => {
     if (error.response?.status === 401) {
         sessionStorage.removeItem('wecode_token');
-        // Only redirect to login if we are NOT on the homepage (public route)
+        // Only redirect to log in if we are NOT on the homepage (public route)
         if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
             window.location.href = '/login';
         }
