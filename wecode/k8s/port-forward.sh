@@ -1,17 +1,25 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────
-# port-forward.sh - USER-SPECIFIC HARDENED VERSION
+# port-forward.sh - UNIFIED VERSION (PIPELINE + MANUAL)
 # ─────────────────────────────────────────────────────────────────
 
 # 1. Environment for Jenkins reliability
-export KUBECONFIG=${KUBECONFIG:-/var/lib/jenkins/.kube/config}
+# Only use Jenkins KUBECONFIG if it exists and is readable, otherwise use default
+JENKINS_KUBE="/var/lib/jenkins/.kube/config"
+if [ -r "$JENKINS_KUBE" ]; then
+    export KUBECONFIG="$JENKINS_KUBE"
+fi
+
 export JENKINS_NODE_COOKIE=dontKillMe
 export BUILD_ID=dontKillMe
 
-# 2. User-specific files to avoid permission conflicts
+# Find absolute paths
+KUBECTL_BIN=$(which kubectl)
+LSOF_BIN=$(which lsof)
+
+# 2. Configuration
 CURRENT_USER=$(whoami)
 NAMESPACE="wecode"
-PID_FILE="/tmp/wecode-port-forwards-${CURRENT_USER}.pid"
 LOG_FILE="/tmp/wecode-port-forwards-${CURRENT_USER}.log"
 
 declare -A SERVICES=(
@@ -26,51 +34,60 @@ declare -A SERVICES=(
 # Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
-start_forwards() {
-    echo "Starting detached port forwarding for user: $CURRENT_USER"
+kill_port_owner() {
+    local port=$1
+    local pid=$($LSOF_BIN -ti:"${port}")
+    if [ ! -z "$pid" ]; then
+        echo -e "${YELLOW}⚠️  Port $port is occupied by PID $pid. Clearing...${NC}"
+        # 1. Try normal kill
+        kill -9 $pid 2>/dev/null || {
+            # 2. Try non-interactive sudo (for Pipeline/Jenkins)
+            sudo -n kill -9 $pid 2>/dev/null || {
+                # 3. Try interactive sudo (for you/Local)
+                echo -e "${YELLOW}🔐 Sudo password may be required to clear port $port...${NC}"
+                sudo kill -9 $pid
+            }
+        }
+    fi
+}
 
-    # Ensure files exist
-    touch "$LOG_FILE" "$PID_FILE"
-    > "$PID_FILE" # Clear old PIDs
+stop_forwards() {
+    echo "Stopping all forwards..."
+    for PORTS in "${SERVICES[@]}"; do
+        LOCAL_PORT="${PORTS%%:*}"
+        kill_port_owner "$LOCAL_PORT"
+    done
+    echo -e "${GREEN}Cleanup complete.${NC}"
+}
+
+start_forwards() {
+    # Self-cleaning: Always stop before starting to prevent zombie tunnels
+    stop_forwards
+
+    echo "Starting detached port forwarding for: $CURRENT_USER"
+    touch "$LOG_FILE"
+    echo "--- Start Log: $(date) ---" >> "$LOG_FILE"
 
     for SERVICE in "${!SERVICES[@]}"; do
         PORTS="${SERVICES[$SERVICE]}"
         LOCAL_PORT="${PORTS%%:*}"
         REMOTE_PORT="${PORTS##*:}"
 
-        # Kill any existing forward ON THIS PORT (any user)
-        # We try to kill, but don't fail if we can't (might belong to another user)
-        if command -v fuser >/dev/null 2>&1; then
-          fuser -k "${LOCAL_PORT}/tcp" >/dev/null 2>&1 || true
-        else
-          # Fallback to lsof if fuser is missing
-          lsof -ti:"${LOCAL_PORT}" | xargs kill -9 >/dev/null 2>&1 || true
-        fi
-
-        # Start port forward
-        # Using 0.0.0.0 for reachability
-        # Double fork to ensure it's orphaned from Jenkins
-        ( ( nohup kubectl port-forward "svc/$SERVICE" "${LOCAL_PORT}:${REMOTE_PORT}" -n "$NAMESPACE" --address 0.0.0.0 >> "$LOG_FILE" 2>&1 & ) & )
-
-        echo -e "  ${GREEN}QUEUED${NC}  $SERVICE → localhost:$LOCAL_PORT"
+        # Start port forward in background (detached)
+        # Using full path and explicit nohup redirection
+        nohup $KUBECTL_BIN port-forward "svc/$SERVICE" "${LOCAL_PORT}:${REMOTE_PORT}" -n "$NAMESPACE" --address 0.0.0.0 >> "$LOG_FILE" 2>&1 &
+        
+        echo -e "  ${GREEN}ACTIVE${NC}  $SERVICE → localhost:$LOCAL_PORT"
     done
 
-    echo "Port forwards are now running. Logs: $LOG_FILE"
-}
-
-stop_forwards() {
-    echo "Stopping all forwards for user $CURRENT_USER..."
-    for PORTS in "${SERVICES[@]}"; do
-        LOCAL_PORT="${PORTS%%:*}"
-        fuser -k "${LOCAL_PORT}/tcp" &>/dev/null || true
-    done
-    echo "Done."
+    echo -e "${GREEN}✅ All tunnels established.${NC}"
 }
 
 status_forwards() {
-    echo "Active port forwards for user $CURRENT_USER:"
+    echo "Active port forwards (system-wide):"
     ps aux | grep "kubectl port-forward" | grep -v grep | grep "$NAMESPACE" || echo "None found."
 }
 
