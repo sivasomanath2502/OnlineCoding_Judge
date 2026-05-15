@@ -36,12 +36,12 @@ NC='\033[0m'
 kill_port_owner() {
     local port=$1
     # Check if anything is listening on this port (TCP)
-    local pid=$($LSOF_BIN -ti:"${port}")
+    # We use sudo -n lsof to see processes from other users
+    local pid=$(sudo -n $LSOF_BIN -ti:"${port}" 2>/dev/null || $LSOF_BIN -ti:"${port}")
     
     if [ ! -z "$pid" ]; then
         echo -e "${YELLOW}⚠️  Port $port is occupied by PID $pid. Force clearing...${NC}"
-        # Use sudo to ensure we can kill processes from other users (e.g. jenkins killing gsomanath or vice versa)
-        # Try non-interactive sudo first, then fall back to interactive
+        # Use sudo -n for the pipeline (Jenkins) and standard sudo for manual runs
         sudo -n kill -9 $pid 2>/dev/null || sudo kill -9 $pid 2>/dev/null
     fi
 }
