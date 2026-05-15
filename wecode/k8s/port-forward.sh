@@ -1,6 +1,9 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────
 # port-forward.sh - UNIFIED VERSION (PIPELINE + MANUAL)
+# ./port-forward.sh start
+# ./port-forward.sh status
+# ./port-forward.sh stop
 # ─────────────────────────────────────────────────────────────────
 
 # 1. Environment for Jenkins reliability
